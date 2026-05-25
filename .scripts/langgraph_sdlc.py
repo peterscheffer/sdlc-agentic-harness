@@ -1,106 +1,230 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import os
-from typing import TypedDict, Optional
-from langgraph.graph import StateGraph, START, END
+import sys
 
-# 1. Define the Graph State Schema
-class SDLCState(TypedDict):
-    current_stage: str
-    next_stage: str
-    target_feature: Optional[str]
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
 
-# 2. Local State Persistence Mechanics
-STATE_FILE = ".sdlc_state.json"
+from utils.state import (
+    load_state, save_state, init_state,
+    validate_stage_transition, get_expected_next_stages, STATE_FILE,
+)
+from utils.config import load_config
+from utils.git import get_current_branch
 
-def load_persisted_state() -> SDLCState:
-    """Loads the state dictionary from disk if it exists; otherwise defaults."""
-    if os.path.exists(STATE_FILE):
+from nodes.planning import execute_planning
+from nodes.ui_design import execute_ui_design
+from nodes.architecture import execute_architecture
+from nodes.coding import execute_coding
+from nodes.testing import execute_testing
+from nodes.review import execute_review
+from nodes.pr import execute_pr
+
+
+def cmd_status():
+    try:
+        state = load_state()
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    print(f"--- SDLC Pipeline Status ---")
+    print(f"Pipeline ID: {state.pipeline_id or 'N/A'}")
+    print(f"Intent: {state.intent or 'N/A'}")
+    print(f"Current Stage: {state.current_stage}")
+    print(f"Completed Stages: {state.completed_stages}")
+    print(f"State file: {STATE_FILE}")
+
+    print(f"\nStage Details:")
+    for stage_id in ["planning", "ui-design", "architecture", "coding", "testing", "review", "pr"]:
+        entry = state.stages.get(stage_id)
+        if entry:
+            status_icon = "\u2713" if entry.status == "complete" else \
+                          "\u26a0" if entry.status == "skipped" else \
+                          "\u2717" if entry.status == "failed" else \
+                          "\u2014"
+            print(f"  {status_icon} {stage_id}: {entry.status}")
+            if entry.reason:
+                print(f"       Reason: {entry.reason}")
+            if entry.recommendation:
+                print(f"       Recommendation: {entry.recommendation}")
+
+    if state.pr_url:
+        print(f"\nPR URL: {state.pr_url}")
+    return 0
+
+
+def cmd_reset(args):
+    try:
+        state = load_state()
+    except ValueError:
+        state = None
+
+    if state and not args.force:
+        print(
+            "This will clear all pipeline state. Existing sdlc/ artefacts will not be deleted.\n"
+            "Are you sure? (yes/no)"
+        )
         try:
-            with open(STATE_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {"current_stage": "INIT", "next_stage": "architect", "target_feature": None}
+            response = input().strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print("\nReset cancelled.")
+            return 1
+        if response != "yes":
+            print("Reset cancelled.")
+            return 0
 
-def save_persisted_state(state: SDLCState):
-    """Saves the mutated state back to disk."""
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
+    if os.path.exists(STATE_FILE):
+        os.remove(STATE_FILE)
+    print("Pipeline state cleared. Run /sdlc planning '<intent>' to start fresh.")
+    return 0
 
-# 3. Define the Graph Nodes (Your original logic)
-def run_architect_stage(state: SDLCState) -> dict:
-    print("\n[LangGraph Node: Architect] Analyzing code footprint and requirements...")
-    # Real-world: Ingests CONSTITUTION.md, targets files, creates your atomic specs
-    return {"current_stage": "PLANNING_COMPLETE", "next_stage": "coder"}
 
-def run_coder_stage(state: SDLCState) -> dict:
-    print("\n[LangGraph Node: Coder] Booting local context-isolated Ralph code execution...")
-    # Real-world: Multi-iteration loop executing code generation and validation blocks
-    return {"current_stage": "BUILD_COMPLETE", "next_stage": "verify"}
+def execute_stage(stage_id: str, intent: str = "", force: bool = False):
+    try:
+        config = load_config()
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Configuration error: {e}")
+        sys.exit(1)
 
-def run_verify_stage(state: SDLCState) -> dict:
-    print("\n[LangGraph Node: Verify] Evaluating systemic drift and integration tests...")
-    # Real-world: Executes dependency structural validation and Playwright/linter runs
-    return {"current_stage": "VERIFICATION_SUCCESS", "next_stage": "complete"}
+    try:
+        state = load_state()
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
-# 4. Assemble the LangGraph State Machine
-workflow = StateGraph(SDLCState)
+    if state.current_stage == "INIT" and stage_id != "planning":
+        print("No pipeline in progress. Start with: /sdlc planning '<intent>'")
+        sys.exit(1)
 
-# Add our functional components as nodes
-workflow.add_node("architect", run_architect_stage)
-workflow.add_node("coder", run_coder_stage)
-workflow.add_node("verify", run_verify_stage)
+    # --- Cross-stage workflow: re-enter planning with new intent ---
+    if stage_id == "planning" and state.current_stage != "INIT" and intent:
+        state = init_state(intent, get_current_branch())
+        state = execute_planning(state, config, intent)
+        save_state(state)
+        _print_metrics(state, stage_id)
+        return 0
 
-# Establish the routing constraints
-def route_from_start(state: SDLCState) -> str:
-    # Use persisted current_stage to decide which node to run next
-    stage_map = {
-        "INIT": "architect",
-        "PLANNING_COMPLETE": "coder",
-        "BUILD_COMPLETE": "verify",
-    }
-    return stage_map.get(state.get("current_stage", "INIT"), END)
+    # --- Cross-stage workflow: re-enter coding from review ---
+    if stage_id == "coding" and state.current_stage == "review":
+        state.stages["coding"].status = "not_started"
+        state.stages["coding"].iterations = None
+        state.current_stage = "coding"
+        if "coding" in state.completed_stages:
+            state.completed_stages.remove("coding")
+        state = execute_coding(state, config)
+        save_state(state)
+        _print_metrics(state, stage_id)
+        return 0
 
-workflow.add_conditional_edges(START, route_from_start)
-workflow.add_edge("architect", END)
-workflow.add_edge("coder", END)
-workflow.add_edge("verify", END)
+    # --- Normal transition validation ---
+    transition_error = validate_stage_transition(state, stage_id)
+    if transition_error:
+        print(transition_error)
+        print("State file not modified.")
+        sys.exit(1)
 
-# Compile our executable graph
-app = workflow.compile()
+    branch = get_current_branch()
 
-# 5. CLI Execution Handler
+    if stage_id == "planning":
+        if state.current_stage == "INIT":
+            state = init_state(intent, branch)
+            state.current_stage = "INIT"
+        state = execute_planning(state, config, intent)
+
+    elif stage_id == "ui-design":
+        state = execute_ui_design(state, config)
+
+    elif stage_id == "architecture":
+        if "ui-design" not in state.completed_stages:
+            state = execute_ui_design(state, config)
+        state = execute_architecture(state, config)
+
+    elif stage_id == "coding":
+        state = execute_coding(state, config)
+
+    elif stage_id == "testing":
+        state = execute_testing(state, config)
+
+    elif stage_id == "review":
+        state = execute_review(state, config)
+
+    elif stage_id == "pr":
+        state = execute_pr(state, config, force=force)
+
+    save_state(state)
+    _print_metrics(state, stage_id)
+    return 0
+
+
+def _print_metrics(state, stage_id: str):
+    print(f"\n--- Stage Execution Metrics ---")
+    stage_entry = state.stages.get(stage_id)
+    if stage_entry:
+        print(f"Updated System Stage Status:  {stage_entry.status.upper()}")
+        if stage_entry.iterations:
+            print(f"Iterations: {stage_entry.iterations}")
+    else:
+        print(f"Updated System Stage Status:  {state.current_stage}")
+    print(f"Next Human Gated Action Required: {_get_next_command(state)}")
+    print(f"-------------------------------")
+
+
+def _get_next_command(state) -> str:
+    expected = get_expected_next_stages(state)
+    if expected and expected[0] != "complete":
+        return f"Run `/sdlc {expected[0]}`"
+    if "pr" in state.completed_stages:
+        return "Pipeline complete. All artefacts committed to sdlc/."
+    return "Run `/sdlc status`"
+
+
 def main():
-    parser = argparse.ArgumentParser(description="LangGraph-driven SDLC State Machine Core")
-    parser.add_argument("--stage", required=True, choices=["planning", "coder", "verify"], 
-                        help="The target execution stage invoked via OpenCode slash command.")
-    parser.add_argument("--feature", required=False, help="The prompt or feature description passed in on initialization.")
-    
-    args = parser.parse_args()
-    
-    # Ingest historical context from disk
-    current_state = load_persisted_state()
-    
-    # Capture feature payload if provided during the initial planning step
-    if args.feature:
-        current_state["target_feature"] = args.feature
+    parser = argparse.ArgumentParser(
+        description="LangGraph-driven SDLC Pipeline - Orchestration Engine"
+    )
 
-    print(f"─── LangGraph Activation Initialized ───")
-    print(f"Target Parameter Passed From Slash Command: '{args.stage}'")
-    print(f"Current Persistent Memory State: {current_state['current_stage']}")
+    parser.add_argument("--stage", required=False,
+                        choices=["planning", "ui-design", "architecture",
+                                 "coding", "testing", "review", "pr"],
+                        help="The target execution stage.")
+    parser.add_argument("--feature", "--intent", required=False, dest="feature",
+                        help="The intent or feature description (for planning).")
+    parser.add_argument("--force", action="store_true",
+                        help="Skip confirmation (for reset) or force PR submission.")
 
-    config = {"configurable": {"thread_id": "1"}}
-    final_output = app.invoke(current_state, config)
-    
-    # Save output adjustments cleanly to disk
-    save_persisted_state(final_output)
-    
-    print(f"\n─── Stage Execution Metrics ───")
-    print(f"Updated System Stage Status:  {final_output['current_stage']}")
-    print(f"Next Human Gated Action Required: Run `/sdlc {final_output['next_stage']}`")
-    print(f"────────────────────────────────────────")
+    args, remaining = parser.parse_known_args()
+
+    if remaining and remaining[0] in ("status", "reset", "stage"):
+        subcmd = remaining[0]
+        if subcmd == "status":
+            return cmd_status()
+        elif subcmd == "reset":
+            return cmd_reset(args)
+        elif subcmd == "stage":
+            subparser = argparse.ArgumentParser()
+            subparser.add_argument("--stage", required=True,
+                                   choices=["planning", "ui-design", "architecture",
+                                            "coding", "testing", "review", "pr"])
+            subparser.add_argument("--feature", required=False)
+            subparser.add_argument("--force", action="store_true")
+            subargs, _ = subparser.parse_known_args(remaining[1:])
+            return execute_stage(subargs.stage, subargs.feature or "", subargs.force)
+
+    if args.stage:
+        return execute_stage(args.stage, args.feature or "", args.force)
+
+    print("Usage:")
+    print("  python3 .scripts/langgraph_sdlc.py --stage <stage> [--feature <intent>] [--force]")
+    print("  python3 .scripts/langgraph_sdlc.py status")
+    print("  python3 .scripts/langgraph_sdlc.py reset [--force]")
+    print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force]")
+    print("")
+    print("Stages: planning, ui-design, architecture, coding, testing, review, pr")
+    return 1
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
