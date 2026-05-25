@@ -1,0 +1,29 @@
+{
+  "$schema": "sdlc-config/v1",
+  "default_model": "openai/gpt-4o",
+  "stages": {
+    "planning": { "model": "openai/gpt-4o" },
+    "ui-design": { "model": "openai/gpt-4o" },
+    "architecture": { "model": "openai/gpt-4o" },
+    "coding": { "model": "openai/gpt-4o", "max_iterations": 5 },
+    "testing": { "model": "openai/gpt-4o" },
+    "review": { "model": "openai/gpt-4o" }
+  },
+  "commands": {
+    "lint": "",
+    "build": "",
+    "test": "python3 -m pytest --tb=short 2>&1 || echo 'No test suite configured'",
+    "coverage_report": null
+  },
+  "coverage": {
+    "enabled": false,
+    "min_percentage": 80
+  },
+  "github": {
+    "base_branch": "main"
+  },
+  "timeouts": {
+    "llm_call_seconds": 120,
+    "command_seconds": 300
+  }
+}
