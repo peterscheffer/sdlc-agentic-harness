@@ -1,0 +1,5 @@
+{
+  "current_stage": "VERIFICATION_SUCCESS",
+  "next_stage": "complete",
+  "target_feature": "Secure Webhooks"
+}
