@@ -1,8 +1,8 @@
 {
-  "default_model": "qwen2.5-coder:32b-instruct-q4_K_M",
+  "default_model": "qwen3.6:35b-a3b",
   "stages": {
     "planning": {
-      "model": "qwen2.5-coder:32b-instruct-q4_K_M"
+      "model": "gemma4:latest"
     },
     "ui-design": {
       "model": "qwen3.6:35b-a3b"
@@ -11,14 +11,14 @@
       "model": "deepseek-r1:32b"
     },
     "coding": {
-      "model": "deepseek-coder-v2:16b-lite-instruct-q4_K_M",
+      "model": "qwen3.6:35b-a3b",
       "max_iterations": 5
     },
     "testing": {
-      "model": "qwen3-coder:latest"
+      "model": "qwen3.6:35b-a3b"
     },
     "review": {
-      "model": "qwen2.5-coder:32b"
+      "model": "gemma4:31b"
     }
   },
   "commands": {

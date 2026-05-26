@@ -28,7 +28,7 @@ def should_skip_ui_design(state: SDLCPersistedState) -> bool:
     return True
 
 
-def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersistedState:
+def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversation_context: str = "") -> SDLCPersistedState:
     print("\n[ui-design] Checking PRD for UI keywords...")
 
     skip = should_skip_ui_design(state)
@@ -65,6 +65,7 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPers
             stage="ui-design",
             config=config,
             system_prompt=system_prompt,
+            conversation_context=conversation_context,
         )
     except RuntimeError as e:
         print(f"\n[ui-design] \u2717 Error: {e}")

@@ -82,7 +82,21 @@ def cmd_reset(args):
     return 0
 
 
-def execute_stage(stage_id: str, intent: str = "", force: bool = False):
+def _read_context_file(path: str) -> str:
+    if not path:
+        return ""
+    if not os.path.exists(path):
+        print(f"[context] Warning: Context file not found: {path}")
+        return ""
+    try:
+        with open(path) as f:
+            return f.read()
+    except Exception as e:
+        print(f"[context] Warning: Could not read context file {path}: {e}")
+        return ""
+
+
+def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversation_context: str = ""):
     try:
         config = load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -102,7 +116,7 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False):
     # --- Cross-stage workflow: re-enter planning with new intent ---
     if stage_id == "planning" and state.current_stage != "INIT" and intent:
         state = init_state(intent, get_current_branch())
-        state = execute_planning(state, config, intent)
+        state = execute_planning(state, config, intent, conversation_context=conversation_context)
         save_state(state)
         _print_metrics(state, stage_id)
         return 0
@@ -114,7 +128,7 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False):
         state.current_stage = "coding"
         if "coding" in state.completed_stages:
             state.completed_stages.remove("coding")
-        state = execute_coding(state, config)
+        state = execute_coding(state, config, conversation_context=conversation_context)
         save_state(state)
         _print_metrics(state, stage_id)
         return 0
@@ -132,24 +146,24 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False):
         if state.current_stage == "INIT":
             state = init_state(intent, branch)
             state.current_stage = "INIT"
-        state = execute_planning(state, config, intent)
+        state = execute_planning(state, config, intent, conversation_context=conversation_context)
 
     elif stage_id == "ui-design":
-        state = execute_ui_design(state, config)
+        state = execute_ui_design(state, config, conversation_context=conversation_context)
 
     elif stage_id == "architecture":
         if "ui-design" not in state.completed_stages:
-            state = execute_ui_design(state, config)
-        state = execute_architecture(state, config)
+            state = execute_ui_design(state, config, conversation_context=conversation_context)
+        state = execute_architecture(state, config, conversation_context=conversation_context)
 
     elif stage_id == "coding":
-        state = execute_coding(state, config)
+        state = execute_coding(state, config, conversation_context=conversation_context)
 
     elif stage_id == "testing":
         state = execute_testing(state, config)
 
     elif stage_id == "review":
-        state = execute_review(state, config)
+        state = execute_review(state, config, conversation_context=conversation_context)
 
     elif stage_id == "pr":
         state = execute_pr(state, config, force=force)
@@ -194,8 +208,12 @@ def main():
                         help="The intent or feature description (for planning).")
     parser.add_argument("--force", action="store_true",
                         help="Skip confirmation (for reset) or force PR submission.")
+    parser.add_argument("--context", required=False,
+                        help="Path to a file containing prior conversation context.")
 
     args, remaining = parser.parse_known_args()
+
+    conversation_context = _read_context_file(args.context or "")
 
     if remaining and remaining[0] in ("status", "reset", "stage"):
         subcmd = remaining[0]
@@ -210,17 +228,19 @@ def main():
                                             "coding", "testing", "review", "pr"])
             subparser.add_argument("--feature", required=False)
             subparser.add_argument("--force", action="store_true")
+            subparser.add_argument("--context", required=False)
             subargs, _ = subparser.parse_known_args(remaining[1:])
-            return execute_stage(subargs.stage, subargs.feature or "", subargs.force)
+            ctx = _read_context_file(subargs.context or "")
+            return execute_stage(subargs.stage, subargs.feature or "", subargs.force, conversation_context=ctx)
 
     if args.stage:
-        return execute_stage(args.stage, args.feature or "", args.force)
+        return execute_stage(args.stage, args.feature or "", args.force, conversation_context=conversation_context)
 
     print("Usage:")
-    print("  python3 .scripts/langgraph_sdlc.py --stage <stage> [--feature <intent>] [--force]")
+    print("  python3 .scripts/langgraph_sdlc.py --stage <stage> [--feature <intent>] [--force] [--context <file>]")
     print("  python3 .scripts/langgraph_sdlc.py status")
     print("  python3 .scripts/langgraph_sdlc.py reset [--force]")
-    print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force]")
+    print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force] [--context <file>]")
     print("")
     print("Stages: planning, ui-design, architecture, coding, testing, review, pr")
     return 1
