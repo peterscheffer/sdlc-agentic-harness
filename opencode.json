@@ -1,0 +1,82 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {
+        "qwen3.6:35b-a3b": {
+          "name": "Qwen 3.6 Coder"
+        },
+        "qwen3-vl:32b": {
+          "name": "Qwen3 VL 32B"
+        },
+        "deepseek-v4-flash:cloud": {
+          "name": "DeepSeek V4 Flash Cloud"
+        },
+        "deepseek-coder-v2:16b-lite-instruct-q4_K_M": {
+          "name": "DeepSeek Coder V2 16B Lite Instruct"
+        },
+        "qwen2.5-coder:32b-instruct-q4_K_M": {
+          "name": "Qwen 2.5 Coder 32B Instruct"
+        },
+        "deepseek-r1:32b": {
+          "name": "DeepSeek R1 32B"
+        },
+        "gemma4:31b": {
+          "name": "Gemma 4 31B"
+        },
+        "deepseek-coder-v2:latest": {
+          "name": "DeepSeek Coder V2"
+        },
+        "qwen3-coder:65k": {
+          "name": "Qwen3 Coder 65K"
+        },
+        "qwen3.5:latest": {
+          "name": "Qwen 3.5"
+        },
+        "gemma4-large:latest": {
+          "name": "Gemma 4 Large"
+        },
+        "gemma4:latest": {
+          "name": "Gemma 4"
+        },
+        "qwen3-coder-32k:latest": {
+          "name": "Qwen3 Coder 32K"
+        },
+        "qwen3-coder:latest": {
+          "name": "Qwen3 Coder"
+        },
+        "qwen2.5-coder:32b": {
+          "name": "Qwen 2.5 Coder 32B"
+        },
+        "qwen3:1.7b": {
+          "name": "Qwen3 1.7B"
+        },
+        "nomic-embed-text:latest": {
+          "name": "Nomic Embed Text"
+        },
+        "qwen2.5-coder:1.5b": {
+          "name": "Qwen 2.5 Coder 1.5B"
+        },
+        "qwen3.5:9b": {
+          "name": "Qwen 3.5 9B"
+        },
+        "qwen3:30b-a3b": {
+          "name": "Qwen3 30B A3B"
+        },
+        "qwen3-coder-next:latest": {
+          "name": "Qwen3 Coder Next"
+        },
+        "qwen2.5-coder:1.5b-base": {
+          "name": "Qwen 2.5 Coder 1.5B Base"
+        },
+        "qwen2.5-coder:14b": {
+          "name": "Qwen 2.5 Coder 14B"
+        }
+      }
+    }
+  }
+}
