@@ -1,0 +1,41 @@
+{
+  "default_model": "qwen2.5-coder:32b-instruct-q4_K_M",
+  "stages": {
+    "planning": {
+      "model": "qwen2.5-coder:32b-instruct-q4_K_M"
+    },
+    "ui-design": {
+      "model": "qwen3.6:35b-a3b"
+    },
+    "architecture": {
+      "model": "deepseek-r1:32b"
+    },
+    "coding": {
+      "model": "deepseek-coder-v2:16b-lite-instruct-q4_K_M",
+      "max_iterations": 5
+    },
+    "testing": {
+      "model": "qwen3-coder:latest"
+    },
+    "review": {
+      "model": "qwen2.5-coder:32b"
+    }
+  },
+  "commands": {
+    "lint": "",
+    "build": "",
+    "test": "python -m pytest tests/ -q",
+    "coverage_report": null
+  },
+  "coverage": {
+    "enabled": false,
+    "min_percentage": 80
+  },
+  "github": {
+    "base_branch": "main"
+  },
+  "timeouts": {
+    "llm_call_seconds": 300,
+    "command_seconds": 120
+  }
+}
