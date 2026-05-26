@@ -47,7 +47,7 @@ def check_has_checkbox_tasks(filepath: str) -> tuple[bool, str]:
         return False, f"{filepath} does not exist"
     with open(filepath) as f:
         content = f.read()
-    task_pattern = r'- \[ \]'
+    task_pattern = r'- \[[ xX]\]'
     tasks = re.findall(task_pattern, content)
     if len(tasks) >= 1:
         return True, f"Found {len(tasks)} task(s)"

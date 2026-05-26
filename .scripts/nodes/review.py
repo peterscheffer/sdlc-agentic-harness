@@ -14,7 +14,7 @@ from gates.principles_checker import load_principles
 REVIEW_PATH = "sdlc/review/REVIEW.md"
 
 
-def execute_review(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersistedState:
+def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_context: str = "") -> SDLCPersistedState:
     print("\n[review] Generating structured self-review...")
 
     os.makedirs("sdlc/review", exist_ok=True)
@@ -71,6 +71,7 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersist
             stage="review",
             config=config,
             system_prompt=system_prompt,
+            conversation_context=conversation_context,
         )
     except RuntimeError as e:
         print(f"[review] \u2717 Error: {e}")
