@@ -22,9 +22,21 @@ def call_llm(
     config: SDLCConfig,
     system_prompt: Optional[str] = None,
     iteration: Optional[int] = None,
+    conversation_context: str = "",
 ) -> str:
     log_path = _get_log_path(stage, iteration)
     model_name = get_stage_model(config, stage)
+
+    effective_system_prompt = system_prompt or ""
+    if conversation_context:
+        context_block = (
+            "\n\n### Prior Conversation Context\n"
+            "The following is the conversation that took place in the OpenCode chat "
+            "before this pipeline stage was invoked. Use it to understand the developer's "
+            "intent, decisions, and requirements:\n\n"
+            f"{conversation_context}"
+        )
+        effective_system_prompt += context_block
 
     log_entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -32,15 +44,16 @@ def call_llm(
         "model": model_name,
         "prompt_tokens": None,
         "completion_tokens": None,
-        "system_prompt": system_prompt,
+        "system_prompt": effective_system_prompt,
         "prompt": prompt,
         "response": None,
         "iteration": iteration,
+        "has_conversation_context": bool(conversation_context),
     }
 
-    if system_prompt:
+    if effective_system_prompt:
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": effective_system_prompt},
             {"role": "user", "content": prompt},
         ]
     else:
@@ -80,24 +93,20 @@ def call_llm(
             return content
 
         except ImportError:
-            content = _mock_llm_call(prompt, stage, iteration)
-            log_entry["response"] = content
-            log_entry["model"] = f"{model_name} (mock)"
-            log_entry["mock_reason"] = "langchain_openai not installed"
-            _write_log(log_path, log_entry)
-            _redact_log(log_path)
-            return content
+            raise RuntimeError(
+                "langchain_openai is not installed. "
+                "Install it with: pip install langchain-openai"
+            )
 
         except Exception as e:
             err_msg = str(e)
             if "api_key" in err_msg.lower() or "apikey" in err_msg.lower() or "credentials" in err_msg.lower():
-                content = _mock_llm_call(prompt, stage, iteration)
-                log_entry["response"] = content
-                log_entry["model"] = f"{model_name} (mock)"
-                log_entry["mock_reason"] = f"LLM unavailable ({err_msg[:80]}...)"
-                _write_log(log_path, log_entry)
-                _redact_log(log_path)
-                return content
+                base = os.environ.get("OPENAI_API_BASE", "http://localhost:11434/v1")
+                raise RuntimeError(
+                    f"AI model unavailable — check that Ollama is running at {base} "
+                    f"and OPENAI_API_BASE / OPENAI_API_KEY are set correctly. "
+                    f"Error: {err_msg[:200]}"
+                )
 
             last_error = err_msg
             log_entry.setdefault("retries", []).append({

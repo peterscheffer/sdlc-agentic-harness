@@ -22,7 +22,7 @@ REQUIRED_ARCH_SECTIONS = [
 ]
 
 
-def execute_architecture(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersistedState:
+def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversation_context: str = "") -> SDLCPersistedState:
     print("\n[architecture] Generating ARCH.md from PRD and prior stages...")
 
     os.makedirs("sdlc/architecture", exist_ok=True)
@@ -73,6 +73,7 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig) -> SDLCP
             stage="architecture",
             config=config,
             system_prompt=system_prompt,
+            conversation_context=conversation_context,
         )
     except RuntimeError as e:
         print(f"\n[architecture] \u2717 Error: {e}")

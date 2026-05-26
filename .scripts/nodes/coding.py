@@ -33,7 +33,7 @@ def _parse_target_files(arch_path: str) -> list[str]:
     return files
 
 
-def execute_coding(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersistedState:
+def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_context: str = "") -> SDLCPersistedState:
     max_iter = get_max_iterations(config, "coding")
     last_failure_reason = None
     iteration_log = []
@@ -89,6 +89,7 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersist
                 config=config,
                 system_prompt=system_prompt,
                 iteration=iteration,
+                conversation_context=conversation_context if iteration == 1 else "",
             )
         except RuntimeError as e:
             print(f"[coding] \u2717 LLM error: {e}")

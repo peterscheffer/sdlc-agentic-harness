@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timezone
+from typing import Optional
 
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
@@ -10,6 +11,7 @@ from gates.gate_runner import (
 )
 
 PRD_PATH = "sdlc/planning/PRD.md"
+TEMPLATE_PATH = "sdlc/templates/PRD.md"
 REQUIRED_SECTIONS = [
     "## Summary",
     "## Goals",
@@ -20,22 +22,45 @@ REQUIRED_SECTIONS = [
 ]
 
 
-def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str) -> SDLCPersistedState:
+def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str, conversation_context: str = "") -> SDLCPersistedState:
     print("\n[planning] Generating PRD.md from developer intent...")
 
     os.makedirs("sdlc/planning", exist_ok=True)
 
+    if not os.path.exists(TEMPLATE_PATH):
+        print(f"\n[planning] \u2717 Error: PRD template not found at {TEMPLATE_PATH}")
+        print("Create the template file and try again.")
+        state.stages["planning"].status = "failed"
+        state.current_stage = "planning"
+        return state
+
+    with open(TEMPLATE_PATH) as f:
+        template_content = f.read()
+
     system_prompt = (
         "You are an expert product requirements document generator. "
-        "Generate a structured PRD.md following the exact schema specified."
+        "Fill in the provided PRD template using the conversation context."
     )
+
+    context_block = conversation_context or f"Feature: {intent}"
     user_prompt = (
-        f"Generate a Product Requirements Document for the following intent:\n\n{intent}\n\n"
-        f"The PRD MUST contain these sections:\n"
-        f"- ## Summary\n- ## Goals\n- ## Non-Goals\n"
-        f"- ## Tasks (with at least one checkbox '- [ ]' item)\n"
-        f"- ## Acceptance Criteria\n- ## Affected Files\n\n"
-        f"Output the PRD as valid Markdown."
+        f"## Conversation Context\n\n{context_block}\n\n"
+        f"## PRD Template (fill in the sections you have context for)\n\n"
+        f"{template_content}\n\n"
+        f"## Instructions\n\n"
+        f"- Fill in every section for which the conversation provides sufficient context "
+        f"(Executive Summary, Problem Statement, Goals, Non-Goals, Technical Stack, etc.).\n"
+        f"- For sections where more detail is needed (e.g. architecture diagrams, data schemas), "
+        f"leave the placeholder or mark them as TBD for future stages.\n"
+        f"- The output MUST also contain these exact section headings (add them if the template lacks them):\n"
+        f"  - ## Summary\n"
+        f"  - ## Goals\n"
+        f"  - ## Non-Goals\n"
+        f"  - ## Tasks\n"
+        f"  - ## Acceptance Criteria\n"
+        f"  - ## Affected Files\n"
+        f"- Under ## Tasks, include at least one checkbox item like '- [ ] Task description'.\n"
+        f"- Output the complete document as valid Markdown."
     )
 
     try:
@@ -44,6 +69,7 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str)
             stage="planning",
             config=config,
             system_prompt=system_prompt,
+            conversation_context=conversation_context,
         )
     except RuntimeError as e:
         print(f"\n[planning] \u2717 Error: {e}")
@@ -54,8 +80,9 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str)
 
     with open(PRD_PATH, "w") as f:
         f.write(content)
-
     print(f"[planning] \u2713 PRD.md written to {PRD_PATH}")
+
+    _ensure_required_sections(PRD_PATH)
 
     passed, messages = run_gate_checks("planning", [
         GateCheck("prd_exists", "PRD.md exists",
@@ -83,6 +110,21 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str)
         state.current_stage = "planning"
 
     return state
+
+
+def _ensure_required_sections(path: str):
+    with open(path) as f:
+        content = f.read()
+    missing = [s for s in REQUIRED_SECTIONS if s not in content]
+    if missing:
+        with open(path, "a") as f:
+            f.write("\n\n---\n\n")
+            for section in missing:
+                if section == "## Tasks":
+                    f.write(f"\n{section}\n- [ ] Implement feature\n\n")
+                else:
+                    f.write(f"\n{section}\nTBD — see numbered sections above.\n\n")
+        print(f"[planning] \u2717 Appended missing schema sections: {', '.join(missing)}")
 
 
 def _check_prd_schema() -> tuple[bool, str]:
