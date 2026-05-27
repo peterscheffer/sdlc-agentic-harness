@@ -75,7 +75,7 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
         )
     except RuntimeError as e:
         print(f"[review] \u2717 Error: {e}")
-        print("Retry with: /sdlc review")
+        print("Retry with: /review")
         state.stages["review"].status = "failed"
         state.current_stage = "review"
         return state
@@ -114,11 +114,11 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
             print(f"[review] \u26a0 Recommendation: FAIL")
             if reason:
                 print(f"[review] Reason: {reason}")
-            print(f"To override and submit PR anyway: /sdlc pr --force")
-            print(f"To re-enter coding: /sdlc coding")
+            print(f"To override and submit PR anyway: /pr --force")
+            print(f"To re-enter coding: /coding")
         else:
             print(f"[review] \u2713 Recommendation: PASS")
-            print(f"Ready to submit PR. Run: /sdlc pr")
+            print(f"Ready to submit PR. Run: /pr")
     else:
         print(f"\n[review] \u2717 Gate checks failed")
         state.stages["review"].status = "failed"

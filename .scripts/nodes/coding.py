@@ -202,7 +202,7 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
     if last_failure_reason:
         print(f"[coding] Last failure: {last_failure_reason}")
     print(f"[coding] See sdlc/coding/ITERATIONS.md for full iteration history.")
-    print(f"Fix the issue manually or refine the PRD and retry: /sdlc coding")
+    print(f"Fix the issue manually or refine the PRD and retry: /coding")
 
     return state
 

@@ -88,7 +88,7 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
 
     if config.coverage.enabled and coverage_percent is not None and not coverage_met:
         print(f"\n[testing] \u2717 Coverage {coverage_percent:.0f}% is below minimum {config.coverage.min_percentage}%.")
-        print(f"[testing] Write additional tests and retry: /sdlc testing")
+        print(f"[testing] Write additional tests and retry: /testing")
         state.stages["testing"].status = "failed"
         state.current_stage = "testing"
         return state
@@ -143,7 +143,7 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
             print(cov_summary)
         print(f"[testing] \u2713 Gate checks passed ({total_checks}/{total_checks})")
         print(f"See {TEST_REPORT_PATH} for details.")
-        print(f"To review the changes, run: /sdlc review")
+        print(f"To review the changes, run: /review")
     else:
         print(f"\n[testing] \u2717 Gate checks failed")
         state.stages["testing"].status = "failed"

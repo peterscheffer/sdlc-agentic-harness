@@ -69,7 +69,7 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
         )
     except RuntimeError as e:
         print(f"\n[ui-design] \u2717 Error: {e}")
-        print("Retry with: /sdlc ui-design")
+        print("Retry with: /ui-design")
         state.stages["ui-design"].status = "failed"
         return state
 
@@ -94,7 +94,7 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
         state.stages["ui-design"].artefact = DESIGN_PATH
         state.completed_stages.append("ui-design")
         print(f"\n[ui-design] \u2713 Gate checks passed (2/2)")
-        print(f"To proceed with architecture, run: /sdlc architecture")
+        print(f"To proceed with architecture, run: /architecture")
     else:
         print(f"\n[ui-design] \u2717 Gate checks failed")
         state.stages["ui-design"].status = "failed"
