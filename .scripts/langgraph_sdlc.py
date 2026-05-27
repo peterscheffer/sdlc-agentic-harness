@@ -23,6 +23,20 @@ from nodes.review import execute_review
 from nodes.pr import execute_pr
 
 
+def _update_prd_if_needed(state, config, stage_id, conversation_context):
+    if stage_id not in ("planning", "review", "pr"):
+        stage_entry = state.stages.get(stage_id)
+        if not stage_entry or stage_entry.status != "complete":
+            return
+        try:
+            from utils.prd_updater import update_prd_if_needed
+            updated = update_prd_if_needed(state, config, stage_id, conversation_context)
+            if updated:
+                print(f"\n[{stage_id}] PRD updated with new information.")
+        except Exception as e:
+            print(f"\n[{stage_id}] PRD update skipped: {e}")
+
+
 def cmd_status():
     try:
         state = load_state()
@@ -129,6 +143,7 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         if "coding" in state.completed_stages:
             state.completed_stages.remove("coding")
         state = execute_coding(state, config, conversation_context=conversation_context)
+        _update_prd_if_needed(state, config, "coding", conversation_context)
         save_state(state)
         _print_metrics(state, stage_id)
         return 0
@@ -152,8 +167,6 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         state = execute_ui_design(state, config, conversation_context=conversation_context)
 
     elif stage_id == "architecture":
-        if "ui-design" not in state.completed_stages:
-            state = execute_ui_design(state, config, conversation_context=conversation_context)
         state = execute_architecture(state, config, conversation_context=conversation_context)
 
     elif stage_id == "coding":
@@ -169,6 +182,9 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         state = execute_pr(state, config, force=force)
 
     save_state(state)
+
+    _update_prd_if_needed(state, config, stage_id, conversation_context)
+
     _print_metrics(state, stage_id)
     return 0
 
