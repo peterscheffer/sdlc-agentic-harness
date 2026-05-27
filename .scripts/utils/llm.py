@@ -157,12 +157,16 @@ def _mock_llm_call(prompt: str, stage: str, iteration: Optional[int] = None) -> 
         return _generate_mock_design()
     elif stage == "architecture":
         return _generate_mock_arch(prompt)
+    elif stage == "requirements":
+        return _generate_mock_requirements()
     elif stage == "coding":
         return _generate_mock_code(prompt, iteration)
     elif stage == "review":
         return _generate_mock_review()
     elif stage == "pr":
         return "# PR body placeholder\n\nSummary of changes here."
+    elif stage == "gherkin-compliance":
+        return "GHERKIN_COMPLIANCE: pass\n\nAll Gherkin scenarios are addressed in the implementation."
     return f"# Mock output for stage: {stage}\n\n{prompt}"
 
 
@@ -210,6 +214,35 @@ UI changes for a new component.
 - **Error**: Error boundary
 - **Success**: Normal display
 """
+
+
+def _generate_mock_requirements() -> str:
+    return (
+        "# Requirements Specification\n\n"
+        "## Overview\n"
+        "Mock requirements for testing.\n\n"
+        "## Functional Requirements\n"
+        "| ID | Description | Priority |\n"
+        "|----|-------------|----------|\n"
+        "| FR-1 | User can log in | High |\n"
+        "| FR-2 | User can view dashboard | Medium |\n\n"
+        "## Non-Functional Requirements\n"
+        "| ID | Description |\n"
+        "|----|-------------|\n"
+        "| NFR-1 | Response time under 200ms |\n\n"
+        "## Behavioural Requirements\n"
+        "| ID | Scenario | Expected Behaviour |\n"
+        "|----|----------|-------------------|\n"
+        "| BR-1 | Invalid login | Show error message |\n\n"
+        "---FEATURE_FILE: user-authentication.feature---\n"
+        "```gherkin\n"
+        "Feature: User Authentication\n"
+        "  Scenario: Successful login\n"
+        "    Given the user is on the login page\n"
+        "    When they enter valid credentials\n"
+        "    Then they are redirected to the dashboard\n"
+        "```\n"
+    )
 
 
 def _generate_mock_arch(intent: str) -> str:
