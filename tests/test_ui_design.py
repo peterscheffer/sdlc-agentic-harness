@@ -17,13 +17,13 @@ Not a components section.
 
 class TestFeature3UiDesign:
 
-    def test_skip_ui_design_if_no_ui_keywords(self, tmp_project):
+    def test_architecture_does_not_auto_run_ui_design(self, tmp_project):
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
         write_artefact(tmp_project, "sdlc/planning/PRD.md", PRD_WITHOUT_UI)
         result = run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
-        assert s["stages"]["ui-design"]["status"] in ("skipped", "complete")
+        assert s["stages"]["ui-design"]["status"] == "not_started"
 
     def test_auto_run_ui_design_if_prd_contains_ui_keywords(self, tmp_project):
         write_config(tmp_project)
@@ -82,13 +82,13 @@ class TestFeature3UiDesign:
         write_principles(tmp_project)
         run_pipeline(tmp_project, "ui-design")
 
-    def test_developer_can_force_skip_ui_design(self, tmp_project):
+    def test_developer_can_skip_ui_design(self, tmp_project):
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
         write_artefact(tmp_project, "sdlc/planning/PRD.md", PRD_WITH_UI)
         result = run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
-        assert s["stages"]["ui-design"]["status"] in ("skipped", "complete")
+        assert s["stages"]["ui-design"]["status"] == "not_started"
 
     def test_developer_can_force_run_ui_design(self, tmp_project):
         write_config(tmp_project)
@@ -114,11 +114,11 @@ class TestFeature3UiDesign:
         result = run_pipeline(tmp_project, "ui-design")
         assert "[ui-design]" in result.stdout
 
-    def test_skip_detects_no_ui_keywords_and_logs_reason(self, tmp_project):
+    def test_architecture_does_not_touch_ui_design(self, tmp_project):
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
         write_artefact(tmp_project, "sdlc/planning/PRD.md",
                       "# Summary\n\nBackend only feature with no user interface concerns whatsoever.")
         result = run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
-        assert s["stages"]["ui-design"]["status"] == "skipped"
+        assert s["stages"]["ui-design"]["status"] == "not_started"

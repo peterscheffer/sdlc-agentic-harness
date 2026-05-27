@@ -101,10 +101,10 @@ def call_llm(
         except Exception as e:
             err_msg = str(e)
             if "api_key" in err_msg.lower() or "apikey" in err_msg.lower() or "credentials" in err_msg.lower():
-                base = os.environ.get("OPENAI_API_BASE", "http://localhost:11434/v1")
                 raise RuntimeError(
-                    f"AI model unavailable — check that Ollama is running at {base} "
-                    f"and OPENAI_API_BASE / OPENAI_API_KEY are set correctly. "
+                    f"API key not configured. "
+                    f"Set the OPENAI_API_KEY environment variable or pass an api_key "
+                    f"when initializing the model. "
                     f"Error: {err_msg[:200]}"
                 )
 
@@ -149,6 +149,8 @@ def _redact_log(path: str):
 
 
 def _mock_llm_call(prompt: str, stage: str, iteration: Optional[int] = None) -> str:
+    if stage.endswith("-prd-update"):
+        return "NO_UPDATE"
     if stage == "planning":
         return _generate_mock_prd(prompt)
     elif stage == "ui-design":
