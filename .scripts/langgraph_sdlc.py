@@ -24,11 +24,12 @@ from nodes.review import execute_review
 from nodes.pr import execute_pr
 
 
-def _update_prd_if_needed(state, config, stage_id, conversation_context):
+def _prd_update(state, config, stage_id, conversation_context, require_complete=True):
     if stage_id not in ("planning", "review", "pr"):
-        stage_entry = state.stages.get(stage_id)
-        if not stage_entry or stage_entry.status != "complete":
-            return
+        if require_complete:
+            stage_entry = state.stages.get(stage_id)
+            if not stage_entry or stage_entry.status != "complete":
+                return
         try:
             from utils.prd_updater import update_prd_if_needed
             updated = update_prd_if_needed(state, config, stage_id, conversation_context)
@@ -144,7 +145,7 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         if "coding" in state.completed_stages:
             state.completed_stages.remove("coding")
         state = execute_coding(state, config, conversation_context=conversation_context)
-        _update_prd_if_needed(state, config, "coding", conversation_context)
+        _prd_update(state, config, "coding", conversation_context)
         save_state(state)
         _print_metrics(state, stage_id)
         return 0
@@ -157,6 +158,8 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         sys.exit(1)
 
     branch = get_current_branch()
+
+    _prd_update(state, config, stage_id, conversation_context, require_complete=False)
 
     if stage_id == "planning":
         if state.current_stage == "INIT":
@@ -187,7 +190,7 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
 
     save_state(state)
 
-    _update_prd_if_needed(state, config, stage_id, conversation_context)
+    _prd_update(state, config, stage_id, conversation_context)
 
     _print_metrics(state, stage_id)
     return 0

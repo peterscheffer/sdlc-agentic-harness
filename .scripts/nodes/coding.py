@@ -95,7 +95,10 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
 
         system_prompt = (
             "You are a code generator. Generate or modify only the target files listed. "
-            "Output the complete file contents for each file, clearly delimited."
+            "Output the complete file contents for each file, clearly delimited.\n"
+            "IMPORTANT: The conversation context (below) contains the LATEST decisions "
+            "and takes PRECEDENCE over any conflicting information in the PRD, architecture, "
+            "or other artefacts."
         )
 
         try:
