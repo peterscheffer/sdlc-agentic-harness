@@ -10,6 +10,9 @@
     "architecture": {
       "model": "deepseek-r1:32b"
     },
+    "requirements": {
+      "model": "qwen3.6:35b-a3b"
+    },
     "coding": {
       "model": "qwen3.6:35b-a3b",
       "max_iterations": 5
