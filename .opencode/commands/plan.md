@@ -46,4 +46,4 @@ Read the printed output from the Python script.
 4. **Trigger Next Stage:** Prompt the user that the planning stage is complete and explicitly instruct them to run the next command file when they are ready:
    
    *Example message to user:* 
-   "Planning context exported and state updated. To begin the architecture stage with the clean PRD baseline, run: `/architecture` or `source .claudecmd/architecture.md`"
+   "Planning context exported and state updated. To begin the architecture stage with the clean PRD baseline, run: /architect"

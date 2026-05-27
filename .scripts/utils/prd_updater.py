@@ -121,6 +121,9 @@ def update_prd_if_needed(
         ])
     parts.extend([
         "\n\n## Instructions\n",
+        "The Conversation Context contains the LATEST decisions and discussions. ",
+        "It takes PRECEDENCE over any conflicting information in the current PRD. ",
+        "The PRD must be the source of truth — update it to reflect the conversation.\n\n",
         "Review the current PRD against the new information above. ",
         "Determine if any of the new information adds valuable detail ",
         "that should be incorporated into the PRD. Consider:\n",

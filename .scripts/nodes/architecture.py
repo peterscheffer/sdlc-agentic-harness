@@ -60,6 +60,8 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
     if rules_context:
         user_prompt_parts.append(f"PRINCIPLES Rules to validate against:\n{rules_context}")
     user_prompt_parts.append(
+        f"IMPORTANT: The conversation context (included in the system prompt) contains the LATEST decisions "
+        f"and takes PRECEDENCE over any conflicting information in the PRD or other artefacts.\n\n"
         f"The ARCH.md MUST contain these sections:\n"
         f"- ## Overview\n- ## Target Files (table with File, Action, Description columns)\n"
         f"- ## Design Decisions\n- ## PRINCIPLES Compliance\n- ## Risks\n\n"
