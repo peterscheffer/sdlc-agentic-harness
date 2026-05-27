@@ -97,7 +97,7 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
         )
     except RuntimeError as e:
         print(f"\n[requirements] \u2717 Error: {e}")
-        print("Retry with: /sdlc requirements")
+        print("Retry with: /requirements")
         state.stages["requirements"].status = "failed"
         state.current_stage = "requirements"
         return state
@@ -133,7 +133,7 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
         state.current_stage = "requirements"
         state.completed_stages.append("requirements")
         print(f"\n[requirements] \u2713 Gate checks passed (3/3)")
-        print(f"\nReview {REQUIREMENTS_PATH} and feature files, then run: /sdlc coding")
+        print(f"\nReview {REQUIREMENTS_PATH} and feature files, then run: /coding")
     else:
         print(f"\n[requirements] \u2717 Gate checks failed")
         state.stages["requirements"].status = "failed"
