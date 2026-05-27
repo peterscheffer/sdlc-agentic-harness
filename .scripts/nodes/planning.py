@@ -73,7 +73,7 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
         )
     except RuntimeError as e:
         print(f"\n[planning] \u2717 Error: {e}")
-        print("Retry with: /sdlc planning '<intent>'")
+        print("Retry with: /plan")
         state.stages["planning"].status = "failed"
         state.current_stage = "planning"
         return state
@@ -103,7 +103,7 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
         state.current_stage = "planning"
         state.completed_stages.append("planning")
         print(f"\n[planning] \u2713 Gate checks passed (3/3)")
-        print(f"\nReview {PRD_PATH}, then run: /sdlc ui-design  (or /sdlc architecture to skip UI)")
+        print(f"\nReview {PRD_PATH}, then run: /ui-design  (or /architect to skip UI design)")
     else:
         print(f"\n[planning] \u2717 Gate checks failed")
         state.stages["planning"].status = "failed"

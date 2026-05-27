@@ -50,5 +50,5 @@ Read the stdout/stderr printed by the Python script.
 3. **Clear Context:** From this point forward, treat the prior requirements discussion as deprecated noise to optimize current memory constraints.
 4. **Trigger Next Stage:** Prompt the user that the requirements stage is complete and instruct them on how to proceed.
    _Example message to user:_
-   "Requirements specification and Gherkin feature files generated. To begin the Coding stage with these requirements as implementation specs, run: /sdlc coding"
+   "Requirements specification and Gherkin feature files generated. To begin the Coding stage with these requirements as implementation specs, run: /coding"
 5. CRITICAL: Hold the line here. Do NOT automatically begin generating code or tests yourself. Wait for human review and the next explicit command invocation.
