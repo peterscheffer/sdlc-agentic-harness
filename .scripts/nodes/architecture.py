@@ -79,7 +79,7 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
         )
     except RuntimeError as e:
         print(f"\n[architecture] \u2717 Error: {e}")
-        print("Retry with: /sdlc architecture")
+        print("Retry with: /architect")
         state.stages["architecture"].status = "failed"
         state.current_stage = "architecture"
         return state
@@ -127,7 +127,7 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
         state.current_stage = "architecture"
         state.completed_stages.append("architecture")
         print(f"\n[architecture] \u2713 Gate checks passed (3/3)")
-        print(f"\nReview {ARCH_PATH}, then run: /sdlc coding")
+        print(f"\nReview {ARCH_PATH}, then run: /requirements")
     else:
         print(f"\n[architecture] \u2717 Gate checks failed")
         state.stages["architecture"].status = "failed"
