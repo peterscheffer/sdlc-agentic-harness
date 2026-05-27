@@ -9,18 +9,19 @@ STATE_FILE = ".sdlc_state.json"
 
 VALID_STAGES = [
     "planning", "ui-design", "architecture",
-    "coding", "testing", "review", "pr", "complete"
+    "requirements", "coding", "testing", "review", "pr", "complete"
 ]
 
 STAGE_ORDER = {
     "planning": 1,
     "ui-design": 2,
     "architecture": 3,
-    "coding": 4,
-    "testing": 5,
-    "review": 6,
-    "pr": 7,
-    "complete": 8,
+    "requirements": 4,
+    "coding": 5,
+    "testing": 6,
+    "review": 7,
+    "pr": 8,
+    "complete": 9,
 }
 
 
@@ -33,6 +34,9 @@ class GateResults(BaseModel):
     arch_exists: Optional[bool] = None
     arch_schema_valid: Optional[bool] = None
     principles_errors_zero: Optional[bool] = None
+    requirements_md_exists: Optional[bool] = None
+    requirements_schema_valid: Optional[bool] = None
+    feature_files_exist: Optional[bool] = None
     linter_passed: Optional[bool] = None
     build_passed: Optional[bool] = None
     target_files_exist: Optional[bool] = None
@@ -40,6 +44,7 @@ class GateResults(BaseModel):
     test_report_exists: Optional[bool] = None
     report_not_empty: Optional[bool] = None
     coverage_threshold_met: Optional[bool] = None
+    gherkin_compliance: Optional[bool] = None
     review_exists: Optional[bool] = None
     recommendation_present: Optional[bool] = None
     gh_authenticated: Optional[bool] = None
@@ -112,6 +117,8 @@ def get_expected_next_stages(state: SDLCPersistedState) -> list[str]:
         return ["ui-design", "architecture"]
     if "architecture" not in completed:
         return ["architecture"]
+    if "requirements" not in completed:
+        return ["requirements"]
     if "coding" not in completed:
         return ["coding"]
     if "testing" not in completed:

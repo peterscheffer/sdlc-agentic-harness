@@ -17,6 +17,7 @@ from utils.git import get_current_branch
 from nodes.planning import execute_planning
 from nodes.ui_design import execute_ui_design
 from nodes.architecture import execute_architecture
+from nodes.requirements import execute_requirements
 from nodes.coding import execute_coding
 from nodes.testing import execute_testing
 from nodes.review import execute_review
@@ -52,7 +53,7 @@ def cmd_status():
     print(f"State file: {STATE_FILE}")
 
     print(f"\nStage Details:")
-    for stage_id in ["planning", "ui-design", "architecture", "coding", "testing", "review", "pr"]:
+    for stage_id in ["planning", "ui-design", "architecture", "requirements", "coding", "testing", "review", "pr"]:
         entry = state.stages.get(stage_id)
         if entry:
             status_icon = "\u2713" if entry.status == "complete" else \
@@ -169,6 +170,9 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
     elif stage_id == "architecture":
         state = execute_architecture(state, config, conversation_context=conversation_context)
 
+    elif stage_id == "requirements":
+        state = execute_requirements(state, config, conversation_context=conversation_context)
+
     elif stage_id == "coding":
         state = execute_coding(state, config, conversation_context=conversation_context)
 
@@ -218,7 +222,7 @@ def main():
 
     parser.add_argument("--stage", required=False,
                         choices=["planning", "ui-design", "architecture",
-                                 "coding", "testing", "review", "pr"],
+                                 "requirements", "coding", "testing", "review", "pr"],
                         help="The target execution stage.")
     parser.add_argument("--feature", "--intent", required=False, dest="feature",
                         help="The intent or feature description (for planning).")
@@ -240,8 +244,8 @@ def main():
         elif subcmd == "stage":
             subparser = argparse.ArgumentParser()
             subparser.add_argument("--stage", required=True,
-                                   choices=["planning", "ui-design", "architecture",
-                                            "coding", "testing", "review", "pr"])
+                                    choices=["planning", "ui-design", "architecture",
+                                             "requirements", "coding", "testing", "review", "pr"])
             subparser.add_argument("--feature", required=False)
             subparser.add_argument("--force", action="store_true")
             subparser.add_argument("--context", required=False)
@@ -258,7 +262,7 @@ def main():
     print("  python3 .scripts/langgraph_sdlc.py reset [--force]")
     print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force] [--context <file>]")
     print("")
-    print("Stages: planning, ui-design, architecture, coding, testing, review, pr")
+    print("Stages: planning, ui-design, architecture, requirements, coding, testing, review, pr")
     return 1
 
 
