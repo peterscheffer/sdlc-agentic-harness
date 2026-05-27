@@ -302,7 +302,7 @@ def setup_completed_planning(project: Path, intent: str = "test feature"):
                 "reason": None, "iterations": None, "coverage_percent": None,
                 "recommendation": None,
                 "gate_results": {}}
-            for s in ["planning", "ui-design", "architecture", "coding",
+            for s in ["planning", "ui-design", "architecture", "requirements", "coding",
                       "testing", "review", "pr", "complete"]
         },
         "pr_url": None,
@@ -329,12 +329,26 @@ def setup_completed_architecture(project: Path, intent: str = "test feature"):
     write_state(project, s)
 
 
+def setup_completed_requirements(project: Path, intent: str = "test feature"):
+    setup_completed_architecture(project, intent)
+    write_artefact(project, "sdlc/requirements/REQUIREMENTS.md",
+                  "# Requirements\n\n## Overview\nTest\n\n## Functional Requirements\n| ID | Desc |\n| FR-1 | Test |\n\n## Non-Functional Requirements\n| ID | Desc |\n| NFR-1 | Test |\n\n## Behavioural Requirements\n| ID | Scenario | Expected |\n| BR-1 | Test | OK |")
+    s = state_content(project)
+    s["current_stage"] = "requirements"
+    s["completed_stages"] = ["planning", "ui-design", "architecture", "requirements"]
+    s["stages"]["requirements"]["status"] = "complete"
+    s["stages"]["requirements"]["artefact"] = "sdlc/requirements/REQUIREMENTS.md"
+    write_state(project, s)
+
+
 def setup_completed_coding(project: Path, intent: str = "test feature"):
     setup_completed_architecture(project, intent)
     write_artefact(project, "src/feature.py", "# feature code")
     s = state_content(project)
     s["current_stage"] = "coding"
-    s["completed_stages"] = ["planning", "ui-design", "architecture", "coding"]
+    s["completed_stages"] = ["planning", "ui-design", "architecture", "requirements", "coding"]
+    s["stages"]["requirements"]["status"] = "complete"
+    s["stages"]["requirements"]["artefact"] = "sdlc/requirements/REQUIREMENTS.md"
     s["stages"]["coding"]["status"] = "complete"
     s["stages"]["coding"]["iterations"] = 1
     s["stages"]["coding"]["gate_results"] = {
@@ -348,7 +362,7 @@ def setup_completed_testing(project: Path, intent: str = "test feature"):
     write_artefact(project, "sdlc/testing/TEST_REPORT.md", "# Test Report\n\nAll tests passed.")
     s = state_content(project)
     s["current_stage"] = "testing"
-    s["completed_stages"] = ["planning", "ui-design", "architecture", "coding", "testing"]
+    s["completed_stages"] = ["planning", "ui-design", "architecture", "requirements", "coding", "testing"]
     s["stages"]["testing"]["status"] = "complete"
     s["stages"]["testing"]["artefact"] = "sdlc/testing/TEST_REPORT.md"
     s["stages"]["testing"]["gate_results"] = {
@@ -364,7 +378,7 @@ def setup_completed_review(project: Path, intent: str = "test feature",
     write_artefact(project, "sdlc/review/REVIEW.md", review_content)
     s = state_content(project)
     s["current_stage"] = "review"
-    s["completed_stages"] = ["planning", "ui-design", "architecture", "coding",
+    s["completed_stages"] = ["planning", "ui-design", "architecture", "requirements", "coding",
                               "testing", "review"]
     s["stages"]["review"]["status"] = "complete"
     s["stages"]["review"]["artefact"] = "sdlc/review/REVIEW.md"

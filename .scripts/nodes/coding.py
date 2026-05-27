@@ -58,6 +58,22 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
         context_parts.append(f"Architecture:\n{arch_content}")
         context_parts.append(f"Target files: {', '.join(target_files) if target_files else 'TBD'}")
 
+        req_content = ""
+        if os.path.exists("sdlc/requirements/REQUIREMENTS.md"):
+            with open("sdlc/requirements/REQUIREMENTS.md") as f:
+                req_content = f.read()
+        if req_content:
+            context_parts.append(f"Requirements:\n{req_content}")
+
+        import glob
+        feature_files = sorted(glob.glob("sdlc/requirements/*.feature"))
+        if feature_files:
+            gherkin_parts = []
+            for ff in feature_files:
+                with open(ff) as f:
+                    gherkin_parts.append(f"--- {os.path.basename(ff)} ---\n{f.read()}")
+            context_parts.append("Gherkin Specs:\n" + "\n".join(gherkin_parts))
+
         file_states = {}
         for tf in target_files:
             if os.path.exists(tf):

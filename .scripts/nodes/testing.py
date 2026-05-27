@@ -1,3 +1,4 @@
+import glob
 import os
 import subprocess
 import re
@@ -6,6 +7,7 @@ from typing import Optional
 
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
+from utils.llm import call_llm
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_file_not_empty,
@@ -73,30 +75,6 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
         min_coverage=config.coverage.min_percentage,
     )
 
-    coverage_met = True
-    if config.coverage.enabled and coverage_percent is not None:
-        coverage_met = coverage_percent >= config.coverage.min_percentage
-
-    gate_checks_list = [
-        GateCheck("tests_passed", "Tests pass",
-                  lambda: (test_passed, f"Test exited with code {exit_code}")),
-        GateCheck("test_report_exists", "TEST_REPORT.md exists",
-                  lambda: check_file_exists(TEST_REPORT_PATH)),
-        GateCheck("report_not_empty", "TEST_REPORT.md not empty",
-                  lambda: check_file_not_empty(TEST_REPORT_PATH)),
-    ]
-
-    if config.coverage.enabled:
-        gate_checks_list.append(
-            GateCheck("coverage_threshold_met", "Coverage meets minimum",
-                      lambda: _check_coverage(coverage_percent, config))
-        )
-
-    passed, messages = run_gate_checks("testing", gate_checks_list, state)
-
-    for msg in messages:
-        print(msg)
-
     state.stages["testing"].coverage_percent = coverage_percent
 
     if not test_passed:
@@ -111,6 +89,37 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
     if config.coverage.enabled and coverage_percent is not None and not coverage_met:
         print(f"\n[testing] \u2717 Coverage {coverage_percent:.0f}% is below minimum {config.coverage.min_percentage}%.")
         print(f"[testing] Write additional tests and retry: /sdlc testing")
+        state.stages["testing"].status = "failed"
+        state.current_stage = "testing"
+        return state
+
+    gherkin_compliance_passed, gherkin_message = _check_gherkin_compliance(config)
+    _append_gherkin_compliance_to_report(gherkin_compliance_passed, gherkin_message)
+
+    gate_checks_list = [
+        GateCheck("tests_passed", "Tests pass",
+                  lambda: (test_passed, f"Test exited with code {exit_code}")),
+        GateCheck("test_report_exists", "TEST_REPORT.md exists",
+                  lambda: check_file_exists(TEST_REPORT_PATH)),
+        GateCheck("report_not_empty", "TEST_REPORT.md not empty",
+                  lambda: check_file_not_empty(TEST_REPORT_PATH)),
+        GateCheck("gherkin_compliance", "Gherkin scenarios implemented",
+                  lambda: (gherkin_compliance_passed, gherkin_message)),
+    ]
+
+    if config.coverage.enabled:
+        gate_checks_list.append(
+            GateCheck("coverage_threshold_met", "Coverage meets minimum",
+                      lambda: _check_coverage(coverage_percent, config))
+        )
+
+    passed, messages = run_gate_checks("testing", gate_checks_list, state)
+
+    for msg in messages:
+        print(msg)
+
+    if not gherkin_compliance_passed:
+        print(f"\n[testing] \u2717 Gherkin compliance check failed: {gherkin_message}")
         state.stages["testing"].status = "failed"
         state.current_stage = "testing"
         return state
@@ -246,3 +255,85 @@ def _write_test_report(
     os.makedirs("sdlc/testing", exist_ok=True)
     with open(TEST_REPORT_PATH, "w") as f:
         f.write("\n".join(lines) + "\n")
+
+
+def _check_gherkin_compliance(config: SDLCConfig) -> tuple[bool, str]:
+    feature_files = sorted(glob.glob("sdlc/requirements/*.feature"))
+    if not feature_files:
+        return True, "No Gherkin feature files found — compliance check skipped"
+
+    if not os.path.exists("sdlc/architecture/ARCH.md"):
+        return True, "ARCH.md not found — compliance check skipped"
+
+    with open("sdlc/architecture/ARCH.md") as f:
+        arch_content = f.read()
+
+    gherkin_specs = []
+    for ff in feature_files:
+        with open(ff) as f:
+            gherkin_specs.append(f"--- {os.path.basename(ff)} ---\n{f.read()}")
+
+    source_files = []
+    in_target = False
+    for line in arch_content.split("\n"):
+        if line.startswith("## Target Files"):
+            in_target = True
+            continue
+        if in_target and line.startswith("## "):
+            break
+        if in_target and "|" in line:
+            parts = [p.strip() for p in line.split("|")]
+            if len(parts) >= 3 and parts[1] and parts[1] not in ("File", "", "---") and not all(c == "-" for c in parts[1]):
+                tf = parts[1]
+                if os.path.exists(tf):
+                    with open(tf) as f:
+                        source_files.append(f"--- {tf} ---\n{f.read()}")
+                else:
+                    gherkin_specs.append(f"--- {tf} ---\n(not yet created)")
+
+    prompt_parts = [
+        "## Gherkin Specifications\n",
+        "\n".join(gherkin_specs),
+        "\n\n## Source Code\n",
+        "\n".join(source_files) if source_files else "(no source files found)",
+        "\n\n## Instructions\n",
+        "Review the Gherkin feature files and the source code implementation. ",
+        "Determine if ALL the Gherkin scenarios are adequately addressed in the code. ",
+        "Respond with exactly one of:\n",
+        "- 'GHERKIN_COMPLIANCE: pass' if all scenarios are implemented\n",
+        "- 'GHERKIN_COMPLIANCE: fail' with a brief explanation of what is missing",
+    ]
+    user_prompt = "".join(prompt_parts)
+
+    system_prompt = (
+        "You are a quality assurance engineer. "
+        "Verify that the implemented source code satisfies all Gherkin scenarios."
+    )
+
+    try:
+        response = call_llm(
+            prompt=user_prompt,
+            stage="gherkin-compliance",
+            config=config,
+            system_prompt=system_prompt,
+        )
+    except RuntimeError as e:
+        return False, f"LLM compliance check failed: {e}"
+
+    stripped = response.strip()
+    if stripped.startswith("GHERKIN_COMPLIANCE: pass"):
+        return True, "All Gherkin scenarios are implemented"
+    elif stripped.startswith("GHERKIN_COMPLIANCE: fail"):
+        detail = stripped[len("GHERKIN_COMPLIANCE: fail"):].strip()
+        return False, detail or "Gherkin compliance check failed"
+    return False, f"Unexpected compliance response: {stripped[:200]}"
+
+
+def _append_gherkin_compliance_to_report(passed: bool, message: str):
+    if not os.path.exists(TEST_REPORT_PATH):
+        return
+    with open(TEST_REPORT_PATH, "a") as f:
+        f.write("\n## Gherkin Compliance\n")
+        icon = "\u2713" if passed else "\u2717"
+        f.write(f"**Status:** {icon} {'PASSED' if passed else 'FAILED'}\n")
+        f.write(f"**Message:** {message}\n")
