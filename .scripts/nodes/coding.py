@@ -6,6 +6,7 @@ from typing import Optional
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig, get_max_iterations
 from utils.llm import call_llm
+from utils.output_validator import validate_stage_output
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_command_exits_ok,
@@ -115,6 +116,15 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
             print("The stage produced no artefacts. Retry with: /coding")
             state.stages["coding"].status = "failed"
             state.stages["coding"].reason = str(e)
+            state.stages["coding"].iterations = iteration
+            _write_iterations_log(state, iteration_log)
+            return state
+
+        valid, reason = validate_stage_output(content, "coding")
+        if not valid:
+            print(f"[coding] \u2717 {reason}")
+            state.stages["coding"].status = "failed"
+            state.stages["coding"].reason = reason
             state.stages["coding"].iterations = iteration
             _write_iterations_log(state, iteration_log)
             return state

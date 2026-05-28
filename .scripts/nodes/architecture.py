@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
 from utils.llm import call_llm
+from utils.output_validator import validate_stage_output
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_has_heading,
@@ -80,6 +81,14 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
     except RuntimeError as e:
         print(f"\n[architecture] \u2717 LLM call failed: {e}")
         print("The stage produced no artefacts. Retry with: /architect")
+        state.stages["architecture"].status = "failed"
+        state.current_stage = "architecture"
+        return state
+
+    valid, reason = validate_stage_output(content, "architecture")
+    if not valid:
+        print(f"\n[architecture] \u2717 {reason}")
+        print("Retry with: /architect")
         state.stages["architecture"].status = "failed"
         state.current_stage = "architecture"
         return state
