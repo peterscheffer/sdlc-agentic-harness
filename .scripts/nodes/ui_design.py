@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
 from utils.llm import call_llm
+from utils.output_validator import validate_stage_output
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_has_heading,
@@ -70,6 +71,13 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
     except RuntimeError as e:
         print(f"\n[ui-design] \u2717 LLM call failed: {e}")
         print("The stage produced no artefacts. Retry with: /ui-design")
+        state.stages["ui-design"].status = "failed"
+        return state
+
+    valid, reason = validate_stage_output(content, "ui-design")
+    if not valid:
+        print(f"\n[ui-design] \u2717 {reason}")
+        print("Retry with: /ui-design")
         state.stages["ui-design"].status = "failed"
         return state
 

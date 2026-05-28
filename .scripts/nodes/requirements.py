@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
 from utils.llm import call_llm
+from utils.output_validator import validate_stage_output
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_has_heading,
@@ -98,6 +99,14 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
     except RuntimeError as e:
         print(f"\n[requirements] \u2717 LLM call failed: {e}")
         print("The stage produced no artefacts. Retry with: /requirements")
+        state.stages["requirements"].status = "failed"
+        state.current_stage = "requirements"
+        return state
+
+    valid, reason = validate_stage_output(content, "requirements")
+    if not valid:
+        print(f"\n[requirements] \u2717 {reason}")
+        print("Retry with: /requirements")
         state.stages["requirements"].status = "failed"
         state.current_stage = "requirements"
         return state
