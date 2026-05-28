@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
 from utils.llm import call_llm
+from utils.output_validator import validate_stage_output
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_has_recommendation_line,
@@ -76,6 +77,14 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
     except RuntimeError as e:
         print(f"[review] \u2717 LLM call failed: {e}")
         print("The stage produced no artefacts. Retry with: /review")
+        state.stages["review"].status = "failed"
+        state.current_stage = "review"
+        return state
+
+    valid, reason = validate_stage_output(content, "review")
+    if not valid:
+        print(f"[review] \u2717 {reason}")
+        print("Retry with: /review")
         state.stages["review"].status = "failed"
         state.current_stage = "review"
         return state
