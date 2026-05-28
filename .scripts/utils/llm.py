@@ -3,7 +3,7 @@ import time
 from datetime import datetime, timezone
 from typing import Optional
 
-from utils.config import SDLCConfig, get_stage_model
+from utils.config import SDLCConfig, get_stage_model, get_stage_provider
 
 LOG_DIR = "sdlc/logs"
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -77,11 +77,30 @@ def call_llm(
         try:
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(
-                model=model_name,
-                temperature=0.3,
-                timeout=config.timeouts.llm_call_seconds,
-            )
+            provider = get_stage_provider(config, stage)
+            llm_kwargs = {
+                "model": model_name,
+                "temperature": 0.3,
+                "timeout": config.timeouts.llm_call_seconds,
+            }
+
+            if provider == "ollama":
+                llm_kwargs["base_url"] = os.environ.get(
+                    "OLLAMA_BASE_URL", "http://127.0.0.1:11434/v1"
+                )
+                llm_kwargs["api_key"] = os.environ.get("OLLAMA_API_KEY", "ollama")
+
+            elif provider == "openrouter":
+                llm_kwargs["base_url"] = "https://openrouter.ai/api/v1"
+                api_key = os.environ.get("OPENROUTER_API_KEY", "")
+                if not api_key:
+                    raise RuntimeError(
+                        "OpenRouter provider requires OPENROUTER_API_KEY environment variable"
+                    )
+                llm_kwargs["api_key"] = api_key
+
+            llm = ChatOpenAI(**llm_kwargs)
+            log_entry["provider"] = provider or "default"
             result = llm.invoke(messages)
             content = result.content
             log_entry["response"] = content
@@ -101,10 +120,16 @@ def call_llm(
         except Exception as e:
             err_msg = str(e)
             if "api_key" in err_msg.lower() or "apikey" in err_msg.lower() or "credentials" in err_msg.lower():
+                provider_hint = ""
+                if provider == "openrouter":
+                    provider_hint = "Set the OPENROUTER_API_KEY environment variable."
+                elif provider == "ollama":
+                    provider_hint = "Set the OLLAMA_API_KEY environment variable, or ensure Ollama is running."
+                else:
+                    provider_hint = "Set the OPENAI_API_KEY environment variable."
                 raise RuntimeError(
-                    f"API key not configured. "
-                    f"Set the OPENAI_API_KEY environment variable or pass an api_key "
-                    f"when initializing the model. "
+                    f"API key not configured for provider '{provider or 'default'}'. "
+                    f"{provider_hint} "
                     f"Error: {err_msg[:200]}"
                 )
 
@@ -118,11 +143,13 @@ def call_llm(
                 delay = 2 ** attempt
                 time.sleep(delay)
 
+    provider_name = get_stage_provider(config, stage) or "default"
     log_entry["error"] = f"LLM call failed after 3 retries. Last error: {last_error}"
     _write_log(log_path, log_entry)
     _redact_log(log_path)
     raise RuntimeError(
-        f"LLM call failed for stage '{stage}' after 3 retries. "
+        f"LLM call failed for stage '{stage}' (provider: {provider_name}) "
+        f"after 3 retries. "
         f"Last error: {last_error}"
     )
 

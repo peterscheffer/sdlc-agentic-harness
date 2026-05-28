@@ -6,8 +6,12 @@ from pydantic import BaseModel, Field
 CONFIG_PATH = "sdlc.config.json"
 
 
+VALID_PROVIDERS = {"ollama", "openrouter", None}
+
+
 class StageConfig(BaseModel):
     model: Optional[str] = None
+    provider: Optional[str] = None
     max_iterations: Optional[int] = None
 
 
@@ -34,6 +38,7 @@ class TimeoutsConfig(BaseModel):
 
 class SDLCConfig(BaseModel):
     default_model: str
+    provider: Optional[str] = None
     stages: dict[str, StageConfig] = {}
     commands: CommandsConfig = CommandsConfig()
     coverage: CoverageConfig = CoverageConfig()
@@ -61,6 +66,13 @@ def get_stage_model(config: SDLCConfig, stage_id: str) -> str:
     if stage_cfg and stage_cfg.model:
         return stage_cfg.model
     return config.default_model
+
+
+def get_stage_provider(config: SDLCConfig, stage_id: str) -> Optional[str]:
+    stage_cfg = config.stages.get(stage_id)
+    if stage_cfg and stage_cfg.provider is not None:
+        return stage_cfg.provider
+    return config.provider
 
 
 def get_max_iterations(config: SDLCConfig, stage_id: str) -> int:
