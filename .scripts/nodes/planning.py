@@ -72,8 +72,8 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
             conversation_context=conversation_context,
         )
     except RuntimeError as e:
-        print(f"\n[planning] \u2717 Error: {e}")
-        print("Retry with: /plan")
+        print(f"\n[planning] \u2717 LLM call failed: {e}")
+        print("The stage produced no artefacts. Retry with: /plan")
         state.stages["planning"].status = "failed"
         state.current_stage = "planning"
         return state
@@ -106,6 +106,10 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
         print(f"\nReview {PRD_PATH}, then run: /ui-design  (or /architect to skip UI design)")
     else:
         print(f"\n[planning] \u2717 Gate checks failed")
+        print("Retry with: /plan")
+        if os.path.exists(PRD_PATH):
+            os.remove(PRD_PATH)
+            print(f"[planning] Removed incomplete artefact: {PRD_PATH}")
         state.stages["planning"].status = "failed"
         state.current_stage = "planning"
 

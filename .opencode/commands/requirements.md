@@ -48,7 +48,25 @@ Read the stdout/stderr printed by the Python script.
 1. **Summarize Changes:** Outline the requirements artefacts generated — REQUIREMENTS.md sections and Gherkin `.feature` files.
 2. **Read Generated Artefacts:** Use your file-reading tool to open `sdlc/requirements/REQUIREMENTS.md` and each `.feature` file under `sdlc/requirements/` to prepare for the next stage.
 3. **Clear Context:** From this point forward, treat the prior requirements discussion as deprecated noise to optimize current memory constraints.
-4. **Trigger Next Stage:** Prompt the user that the requirements stage is complete and instruct them on how to proceed.
-   _Example message to user:_
-   "Requirements specification and Gherkin feature files generated. To begin the Coding stage with these requirements as implementation specs, run: /coding"
-5. CRITICAL: Hold the line here. Do NOT automatically begin generating code or tests yourself. Wait for human review and the next explicit command invocation.
+
+## Phase 5. Auto-Accept (Optional)
+After the requirements stage completes successfully, ask the user if they would like to auto-accept the LLM's recommendations for the remaining stages.
+
+1. Ask the user:
+   _"The requirements stage is complete. Would you like to auto-accept the LLM's recommendations for the remaining stages (coding, testing, review, pr)? This will run all stages autonomously without further manual confirmation. (yes/no)"_
+
+2. If the user agrees:
+   a. Inform them the pipeline will now run autonomously through all remaining stages.
+   b. Execute:
+      ```bash
+      python3 .scripts/langgraph_sdlc.py --stage coding --context "$CONTEXT_FILE" --autopilot
+      ```
+   c. Monitor the output as each stage (coding, testing, review, pr) runs. If any stage fails, the pipeline will halt and you should report the failure to the user.
+   d. After the auto-pilot completes (success or failure), summarize the overall result:
+      - If successful: "Pipeline complete! All stages passed. Pull request created at: <URL>"
+      - If failed: "Auto-pilot halted at <stage>. Fix the issue and continue manually with the next command."
+
+3. If the user declines:
+   a. Trigger the standard handover:
+      _"Requirements specification and Gherkin feature files generated. To begin the Coding stage with these requirements as implementation specs, run: /coding"_
+   b. CRITICAL: Hold the line here. Do NOT automatically begin generating code or tests yourself. Wait for human review and the next explicit command invocation.

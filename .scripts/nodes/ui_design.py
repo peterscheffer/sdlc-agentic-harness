@@ -68,8 +68,8 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
             conversation_context=conversation_context,
         )
     except RuntimeError as e:
-        print(f"\n[ui-design] \u2717 Error: {e}")
-        print("Retry with: /ui-design")
+        print(f"\n[ui-design] \u2717 LLM call failed: {e}")
+        print("The stage produced no artefacts. Retry with: /ui-design")
         state.stages["ui-design"].status = "failed"
         return state
 
@@ -97,6 +97,10 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
         print(f"To proceed with architecture, run: /architecture")
     else:
         print(f"\n[ui-design] \u2717 Gate checks failed")
+        print("Retry with: /ui-design")
+        if os.path.exists(DESIGN_PATH):
+            os.remove(DESIGN_PATH)
+            print(f"[ui-design] Removed incomplete artefact: {DESIGN_PATH}")
         state.stages["ui-design"].status = "failed"
 
     return state
