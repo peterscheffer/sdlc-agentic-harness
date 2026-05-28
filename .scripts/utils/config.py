@@ -50,7 +50,7 @@ def load_config() -> SDLCConfig:
     if not os.path.exists(CONFIG_PATH):
         raise FileNotFoundError(
             f"{CONFIG_PATH} not found. Create this file at the project root. "
-            "See PRINCIPLES.example.md for a template."
+            "See PRINCIPLES.md for a template."
         )
     try:
         with open(CONFIG_PATH) as f:
