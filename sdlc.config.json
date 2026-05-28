@@ -1,5 +1,6 @@
 {
   "default_model": "qwen3.6:35b-a3b",
+  "provider": "ollama",
   "stages": {
     "planning": {
       "model": "gemma4:latest"
@@ -42,3 +43,4 @@
     "command_seconds": 120
   }
 }
+  
