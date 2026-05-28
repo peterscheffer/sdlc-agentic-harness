@@ -22,6 +22,8 @@ Your objective is to interview the user to determine the testing scope and focus
   * **Edge Cases:** Are there specific edge cases or failure scenarios to prioritise?
   * **Coverage Goals:** Are there minimum coverage thresholds or critical paths that must pass?
   * **Environment:** Any special environment setup or configuration needed for tests?
+* **Test Types** Ask the user what type of testing to include; integration, unit, functional, etc. Explain to them if needed.
+
 
 ## Phase 2: The Gate (Validation)
 Iterate on the testing questions until you have a clear testing direction. Do **NOT** proceed to the bash commands in Phase 3 until you explicitly meet this condition:
