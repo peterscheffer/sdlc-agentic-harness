@@ -78,8 +78,8 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
             conversation_context=conversation_context,
         )
     except RuntimeError as e:
-        print(f"\n[architecture] \u2717 Error: {e}")
-        print("Retry with: /architect")
+        print(f"\n[architecture] \u2717 LLM call failed: {e}")
+        print("The stage produced no artefacts. Retry with: /architect")
         state.stages["architecture"].status = "failed"
         state.current_stage = "architecture"
         return state
@@ -130,6 +130,10 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
         print(f"\nReview {ARCH_PATH}, then run: /requirements")
     else:
         print(f"\n[architecture] \u2717 Gate checks failed")
+        print("Retry with: /architect")
+        if os.path.exists(ARCH_PATH):
+            os.remove(ARCH_PATH)
+            print(f"[architecture] Removed incomplete artefact: {ARCH_PATH}")
         state.stages["architecture"].status = "failed"
         state.current_stage = "architecture"
 

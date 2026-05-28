@@ -96,8 +96,8 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
             conversation_context=conversation_context,
         )
     except RuntimeError as e:
-        print(f"\n[requirements] \u2717 Error: {e}")
-        print("Retry with: /requirements")
+        print(f"\n[requirements] \u2717 LLM call failed: {e}")
+        print("The stage produced no artefacts. Retry with: /requirements")
         state.stages["requirements"].status = "failed"
         state.current_stage = "requirements"
         return state
@@ -136,10 +136,20 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
         print(f"\nReview {REQUIREMENTS_PATH} and feature files, then run: /coding")
     else:
         print(f"\n[requirements] \u2717 Gate checks failed")
+        print("Retry with: /requirements")
+        _cleanup_artefacts()
         state.stages["requirements"].status = "failed"
         state.current_stage = "requirements"
 
     return state
+
+
+def _cleanup_artefacts():
+    if os.path.exists(REQUIREMENTS_PATH):
+        os.remove(REQUIREMENTS_PATH)
+    for f in _get_feature_files():
+        os.remove(f)
+    print(f"[requirements] Removed incomplete artefacts from {GHERKIN_DIR}/")
 
 
 def _write_artefacts(llm_content: str):

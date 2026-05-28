@@ -74,8 +74,8 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
             conversation_context=conversation_context,
         )
     except RuntimeError as e:
-        print(f"[review] \u2717 Error: {e}")
-        print("Retry with: /review")
+        print(f"[review] \u2717 LLM call failed: {e}")
+        print("The stage produced no artefacts. Retry with: /review")
         state.stages["review"].status = "failed"
         state.current_stage = "review"
         return state
@@ -121,6 +121,10 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
             print(f"Ready to submit PR. Run: /pr")
     else:
         print(f"\n[review] \u2717 Gate checks failed")
+        print("Retry with: /review")
+        if os.path.exists(REVIEW_PATH):
+            os.remove(REVIEW_PATH)
+            print(f"[review] Removed incomplete artefact: {REVIEW_PATH}")
         state.stages["review"].status = "failed"
         state.current_stage = "review"
 

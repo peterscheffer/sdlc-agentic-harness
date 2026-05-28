@@ -111,7 +111,8 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
                 conversation_context=conversation_context if iteration == 1 else "",
             )
         except RuntimeError as e:
-            print(f"[coding] \u2717 LLM error: {e}")
+            print(f"[coding] \u2717 LLM call failed: {e}")
+            print("The stage produced no artefacts. Retry with: /coding")
             state.stages["coding"].status = "failed"
             state.stages["coding"].reason = str(e)
             state.stages["coding"].iterations = iteration
@@ -186,7 +187,7 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
         if iteration < max_iter:
             print(f"[coding] - Retrying with fresh context (iteration {iteration + 1})...")
         else:
-            print(f"[coding] - Maximum iterations ({max_iter}) reached.")
+            print(f"[coding] - Maximum iterations ({max_iter}) reached. Cleaning up generated files...")
 
     state.stages["coding"].status = "failed"
     state.stages["coding"].iterations = max_iter
@@ -198,10 +199,15 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
 
     _write_iterations_log(state, iteration_log)
 
+    for tf in target_files:
+        if os.path.exists(tf):
+            os.remove(tf)
+            print(f"[coding] Removed incomplete file: {tf}")
+
     print(f"\n[coding] \u2717 Coding stage failed after {max_iter} iterations.")
     if last_failure_reason:
         print(f"[coding] Last failure: {last_failure_reason}")
-    print(f"[coding] See sdlc/coding/ITERATIONS.md for full iteration history.")
+    print(f"No artefacts were left on disk.")
     print(f"Fix the issue manually or refine the PRD and retry: /coding")
 
     return state

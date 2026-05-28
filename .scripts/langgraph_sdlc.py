@@ -112,7 +112,60 @@ def _read_context_file(path: str) -> str:
         return ""
 
 
-def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversation_context: str = ""):
+def _run_autopilot(state, config, conversation_context):
+    from utils.state import StageEntry
+
+    print(f"\n{'='*60}")
+    print(f"[autopilot] Pipeline auto-pilot engaged. Running remaining stages...")
+    print(f"{'='*60}")
+
+    while True:
+        expected = get_expected_next_stages(state)
+        if not expected or expected[0] == "complete":
+            break
+        next_stage = expected[0]
+
+        print(f"\n{'='*50}")
+        print(f"[autopilot] Running stage: {next_stage}")
+        print(f"{'='*50}")
+
+        if next_stage == "coding":
+            state = execute_coding(state, config, conversation_context=conversation_context)
+        elif next_stage == "testing":
+            state = execute_testing(state, config)
+        elif next_stage == "review":
+            state = execute_review(state, config, conversation_context=conversation_context)
+        elif next_stage == "pr":
+            rec = state.stages.get("review", StageEntry()).recommendation
+            if rec == "FAIL":
+                print(f"\n[autopilot] Review recommended FAIL. Cannot auto-submit PR.")
+                print(f"[autopilot] Halting pipeline. Run '/pr' or '/pr --force' manually.")
+                state.stages["pr"].status = "failed"
+                state.stages["pr"].reason = "Autopilot halted: review recommendation is FAIL"
+                save_state(state)
+                _print_metrics(state, next_stage)
+                return state
+            state = execute_pr(state, config, force=False)
+
+        save_state(state)
+        _prd_update(state, config, next_stage, conversation_context)
+        _print_metrics(state, next_stage)
+
+        if state.stages[next_stage].status != "complete":
+            print(f"\n[autopilot] \u2717 Stage '{next_stage}' FAILED.")
+            print(f"[autopilot] Pipeline halted. Fix the issue and continue manually.")
+            print(f"[autopilot] Run '/sdlc status' to see the current state.")
+            return state
+
+        print(f"[autopilot] \u2713 Stage '{next_stage}' completed.")
+
+    print(f"\n{'='*60}")
+    print(f"[autopilot] \u2713 All stages completed. Pipeline finished!")
+    print(f"{'='*60}")
+    return state
+
+
+def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversation_context: str = "", autopilot: bool = False):
     try:
         config = load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -193,6 +246,11 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
     _prd_update(state, config, stage_id, conversation_context)
 
     _print_metrics(state, stage_id)
+
+    if autopilot and state.stages[stage_id].status == "complete":
+        state = _run_autopilot(state, config, conversation_context)
+        save_state(state)
+
     return 0
 
 
@@ -233,6 +291,8 @@ def main():
                         help="Skip confirmation (for reset) or force PR submission.")
     parser.add_argument("--context", required=False,
                         help="Path to a file containing prior conversation context.")
+    parser.add_argument("--autopilot", "-a", action="store_true",
+                        help="After the requested stage succeeds, automatically run all remaining stages.")
 
     args, remaining = parser.parse_known_args()
 
@@ -252,20 +312,26 @@ def main():
             subparser.add_argument("--feature", required=False)
             subparser.add_argument("--force", action="store_true")
             subparser.add_argument("--context", required=False)
+            subparser.add_argument("--autopilot", action="store_true")
             subargs, _ = subparser.parse_known_args(remaining[1:])
             ctx = _read_context_file(subargs.context or "")
-            return execute_stage(subargs.stage, subargs.feature or "", subargs.force, conversation_context=ctx)
+            return execute_stage(subargs.stage, subargs.feature or "", subargs.force,
+                                 conversation_context=ctx, autopilot=subargs.autopilot)
 
     if args.stage:
-        return execute_stage(args.stage, args.feature or "", args.force, conversation_context=conversation_context)
+        return execute_stage(args.stage, args.feature or "", args.force,
+                             conversation_context=conversation_context, autopilot=args.autopilot)
 
     print("Usage:")
-    print("  python3 .scripts/langgraph_sdlc.py --stage <stage> [--feature <intent>] [--force] [--context <file>]")
+    print("  python3 .scripts/langgraph_sdlc.py --stage <stage> [--feature <intent>] [--force] [--context <file>] [--autopilot]")
     print("  python3 .scripts/langgraph_sdlc.py status")
     print("  python3 .scripts/langgraph_sdlc.py reset [--force]")
-    print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force] [--context <file>]")
+    print("  python3 .scripts/langgraph_sdlc.py stage --stage <stage> [--feature <intent>] [--force] [--context <file>] [--autopilot]")
     print("")
     print("Stages: planning, ui-design, architecture, requirements, coding, testing, review, pr")
+    print("")
+    print("Flags:")
+    print("  --autopilot, -a   Run all remaining stages automatically after the requested stage completes.")
     return 1
 
 
