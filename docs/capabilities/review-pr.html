@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Review &amp; PR</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html" class="active">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Structured Self-Review &amp; PR Submission</h2>
+
+<p>
+The final two stages of the pipeline provide a <strong>structured self-review</strong> followed by <strong>automated GitHub PR submission</strong>. The review produces a PASS/FAIL recommendation that gates the PR stage, ensuring no unreviewed code reaches the repository.
+</p>
+
+<h3>Review Stage: REVIEW.md</h3>
+
+<p>The review stage uses an LLM to analyze the entire change and produce a structured <code>sdlc/review/REVIEW.md</code> with these sections:</p>
+
+<table>
+<tr><th>Section</th><th>Content</th></tr>
+<tr><td>## Change Summary</td><td>What changed, derived from the git diff</td></tr>
+<tr><td>## PRD Alignment</td><td>Line-by-line check: does the implementation satisfy each task and acceptance criterion in PRD.md?</td></tr>
+<tr><td>## PRINCIPLES Compliance</td><td>Any violations found in the final code, with file and line references</td></tr>
+<tr><td>## Test Evidence</td><td>Summary of TEST_REPORT.md: pass/fail counts, coverage percentage</td></tr>
+<tr><td>## Recommendation</td><td><code>recommendation: PASS</code> or <code>recommendation: FAIL</code></td></tr>
+<tr><td>## Notes</td><td>Optional reviewer notes</td></tr>
+</table>
+
+<p>The recommendation line is <strong>parsed programmatically</strong> by the gate checker. The line must appear exactly as <code>recommendation: PASS</code> or <code>recommendation: FAIL</code> (colon, space, value).</p>
+
+<h3>Review Gates</h3>
+<ul>
+<li><span class="tag">REVIEW.md exists</span> — the file must be written to disk</li>
+<li><span class="tag">Recommendation present</span> — must contain a <code>recommendation:</code> line with PASS or FAIL value</li>
+</ul>
+
+<h3>PR Stage: GitHub Submission</h3>
+
+<p>The PR stage automates the entire PR creation process:</p>
+
+<ol>
+<li><strong>Check prerequisites:</strong> Verify <code>gh auth status</code> succeeds and current branch is not the base branch</li>
+<li><strong>Commit artefacts:</strong> Stage and commit all files under <code>sdlc/</code> with a structured commit message</li>
+<li><strong>Build PR body:</strong> Construct a structured PR body from pipeline artefacts</li>
+<li><strong>Submit via gh CLI:</strong> Execute <code>gh pr create</code> with structured title and body</li>
+<li><strong>Record URL:</strong> Capture and store the returned PR URL in <code>.sdlc_state.json</code></li>
+<li><strong>Mark complete:</strong> Set pipeline status to complete</li>
+</ol>
+
+<h3>PR Body Structure</h3>
+
+<pre>## Summary
+[First paragraph of sdlc/planning/PRD.md]
+
+## Changes
+[Bullet list from REVIEW.md § Change Summary]
+
+## Test Evidence
+[Test run summary from sdlc/testing/TEST_REPORT.md]
+
+## Review Outcome
+recommendation: PASS
+
+## Pipeline Artefacts
+- [PRD](sdlc/planning/PRD.md)
+- [Architecture](sdlc/architecture/ARCH.md)
+- [Review](sdlc/review/REVIEW.md)
+- [Test Report](sdlc/testing/TEST_REPORT.md)</pre>
+
+<h3>Recommendation Gating</h3>
+
+<table>
+<tr><th>Scenario</th><th>Behaviour</th></tr>
+<tr><td>Review: PASS → developer runs <code>/pr</code></td><td>PR is created normally</td></tr>
+<tr><td>Review: FAIL → developer runs <code>/pr</code></td><td>PR is blocked with error message; developer must review REVIEW.md</td></tr>
+<tr><td>Review: FAIL → developer runs <code>/pr --force</code></td><td>Confirmation prompt: "Are you sure? (yes/no)". On confirmation, PR is submitted</td></tr>
+<tr><td>Review: FAIL → developer runs <code>/coding</code></td><td>Returns to the coding loop with review context preserved</td></tr>
+</table>
+
+<h3>PR Gates</h3>
+<ul>
+<li><span class="tag">gh authenticated</span> — <code>gh auth status</code> must exit with code 0</li>
+<li><span class="tag">Not on base branch</span> — must not be on <code>main</code> or the configured <code>github.base_branch</code></li>
+<li><span class="tag">PR created</span> — <code>gh pr create</code> must exit with code 0 and return a URL</li>
+</ul>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="stages.html">SDLC Stages</a> — review and pr stages in the pipeline</li>
+<li><a href="gates.html">Gate-Based Verification</a> — recommendation gating</li>
+<li><a href="coding-loop.html">Coding Loop</a> — re-entering coding from review</li>
+</ul>
+
+</main>
+
+</body>
+</html>

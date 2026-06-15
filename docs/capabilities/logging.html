@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — LLM Interaction Logging</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html" class="active">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>LLM Interaction Logging</h2>
+
+<p>
+Every LLM invocation by the harness is logged to <code>sdlc/logs/</code> in structured JSON format. This provides a <strong>complete audit trail</strong> for every prompt, response, and model decision across all pipeline stages.
+</p>
+
+<h3>Log Structure</h3>
+
+<p>Each log file is named <code>&lt;stage&gt;_&lt;timestamp&gt;.log</code> (or <code>&lt;stage&gt;_iteration_&lt;N&gt;_&lt;timestamp&gt;.log</code> for coding iterations) and contains:</p>
+
+<pre>{
+  "timestamp": "2026-06-15T10:30:00.000000+00:00",
+  "stage": "planning",
+  "model": "qwen3.6:35b-a3b",
+  "provider": "ollama",
+  "prompt_tokens": 1250,
+  "completion_tokens": 890,
+  "system_prompt": "You are an expert product requirements...",
+  "prompt": "## Conversation Context\n\nFeature: Add JWT...",
+  "response": "# Product Requirements Document\n\n## Summary...",
+  "iteration": 1,
+  "has_conversation_context": true
+}</pre>
+
+<h3>Automatic Secrets Redaction</h3>
+
+<p>After every log write, the harness runs a <strong>secrets redaction pass</strong> against the log file. This ensures no sensitive information leaks into the audit trail:</p>
+
+<pre># Redaction patterns (from utils/llm.py):
+patterns = [
+  r'(?i)(api[-_]?key|apikey|secret|token|password|auth)[=:]\s*\S+',
+  r'(?i)(authorization|bearer)\s+\S+',
+  r'(?i)(sk-[a-zA-Z0-9]{20,})',
+]
+
+# Result: "api_key=sk-abc123..." → "api_key= [REDACTED]"</pre>
+
+<p>This covers: <span class="tag">API keys</span> <span class="tag">Secrets</span> <span class="tag">Tokens</span> <span class="tag">Passwords</span> <span class="tag">Bearer tokens</span> <span class="tag">OpenAI-style sk- keys</span></p>
+
+<h3>Retry Tracking</h3>
+
+<p>When an LLM call fails, retry attempts are recorded in the log entry:</p>
+
+<pre>{
+  "retries": [
+    { "attempt": 1, "error": "Connection refused" },
+    { "attempt": 2, "error": "Connection refused" }
+  ],
+  "error": "LLM call failed after 3 retries. Last error: ..."
+}</pre>
+
+<h3>Mock LLM Mode</h3>
+
+<p>For testing without real LLM calls, set the <code>SDLC_USE_MOCK_LLM</code> environment variable:</p>
+
+<pre>export SDLC_USE_MOCK_LLM=1
+python3 .scripts/langgraph_sdlc.py --stage planning --feature "add auth"</pre>
+
+<p>This returns deterministic mock responses for every stage, logs them with a <code>(mock)</code> indicator, and enables full pipeline testing without any LLM dependency. The test suite uses this mode exclusively.</p>
+
+<h3>Multi-Provider LLM Support</h3>
+
+<table>
+<tr><th>Provider</th><th>Configuration</th><th>Auth Method</th></tr>
+<tr><td>Ollama</td><td><code>base_url: "http://127.0.0.1:11434/v1"</code></td><td>No API key needed, or <code>OLLAMA_API_KEY</code></td></tr>
+<tr><td>OpenRouter</td><td><code>base_url: "https://openrouter.ai/api/v1"</code></td><td><code>OPENROUTER_API_KEY</code> env var</td></tr>
+<tr><td>Any OpenAI-compatible</td><td>Custom base URL + per-stage model config</td><td>Standard API key config</td></tr>
+</table>
+
+<p>Per-stage model selection allows using different models for different cognitive tasks — a smaller model for planning, a larger model for coding:</p>
+
+<pre>{
+  "stages": {
+    "planning":     { "model": "gemma4:latest" },
+    "architecture": { "model": "gemma4:latest" },
+    "coding":       { "model": "qwen3.6:35b-a3b", "max_iterations": 5 },
+    "review":       { "model": "gemma4:31b" }
+  }
+}</pre>
+
+<h3>Benefits</h3>
+<ul>
+<li><strong>Auditability:</strong> Every AI decision is recorded and reviewable</li>
+<li><strong>Debugging:</strong> Failed stages can be traced back to the exact prompt and response</li>
+<li><strong>Cost tracking:</strong> Token counts enable cost analysis per stage and per pipeline run</li>
+<li><strong>Security:</strong> Secrets are automatically redacted before logs are committed</li>
+<li><strong>Reproducibility:</strong> Mock mode allows deterministic replay of any pipeline run</li>
+</ul>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="state.html">State Persistence</a> — how pipeline state is tracked</li>
+<li><a href="config.html">Configuration</a> — per-stage model configuration</li>
+</ul>
+
+</main>
+
+</body>
+</html>

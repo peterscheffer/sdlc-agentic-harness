@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Coding Loop</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.highlight { background: #fffde7; border: 1px solid #fff9c4; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+code strong { color: #d63384; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html" class="active">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Iterative Coding Loop ("Ralph Loop")</h2>
+
+<p>
+The coding stage implements a <strong>retry loop with full context isolation</strong> between iterations. This is the primary mechanism for maintaining code quality and preventing the context rot that plagues long AI-assisted coding sessions.
+</p>
+
+<h3>How It Works</h3>
+
+<p>The coding stage is configured with a maximum iteration count (default: 5). Each iteration follows this flow:</p>
+
+<ol>
+<li><strong>Receive context:</strong> The LLM receives only: ARCH.md (architecture), the current state of target files, Gherkin specs, and (from iteration 2 onwards) the specific gate failure reason from the previous iteration</li>
+<li><strong>Generate code:</strong> The LLM generates or modifies the target source files specified in ARCH.md's Target Files table</li>
+<li><strong>Run gate checks:</strong> Linter, build, and file existence checks execute against the generated code</li>
+<li><strong>Evaluate:</strong>
+  <ul>
+    <li>All gates pass → loop exits; stage completes successfully</li>
+    <li>Any gate fails → the iteration context is <strong>fully cleared</strong>; only the failure reason is carried forward</li>
+  </ul>
+</li>
+<li><strong>Retry or fail:</strong> If iterations remain, a fresh LLM call starts the next iteration. If max iterations reached, the stage fails with a full iteration log.</li>
+</ol>
+
+<div class="highlight">
+<h4>Key Design Decision: Context Isolation</h4>
+<p>Each loop iteration starts with a <strong>fresh LLM call context</strong>. No prior conversation history is carried between iterations. This is the primary mechanism for preventing context rot and ensuring each attempt is a clean slate.</p>
+<p>In code: <code>conversation_context=conversation_context if iteration == 1 else ""</code></p>
+</div>
+
+<h3>Gate Checks Per Iteration</h3>
+
+<table>
+<tr><th>Check</th><th>Description</th><th>Config Source</th></tr>
+<tr><td>Linter</td><td>Lint command exits with code 0</td><td><code>sdlc.config.json → commands.lint</code></td></tr>
+<tr><td>Build</td><td>Build command exits with code 0</td><td><code>sdlc.config.json → commands.build</code></td></tr>
+<tr><td>Target Files</td><td>All files listed in ARCH.md's ## Target Files exist on disk</td><td>ARCH.md (parsed dynamically)</td></tr>
+</table>
+
+<h3>Iteration Log</h3>
+
+<p>On failure, a full iteration log is written to <code>sdlc/coding/ITERATIONS.md</code>:</p>
+
+<pre># Coding Iteration Log
+
+**Pipeline ID:** 550e8400-e29b-41d4-a716-446655440000
+**Max Iterations:** 5
+**Result:** failed
+
+| Iteration | Linter | Build | Files Exist | Failure Reason |
+|-----------|--------|-------|-------------|----------------|
+| 1 | ✓ | ✗ | ✓ | Build command exited with code 1 |
+| 2 | ✗ | - | ✓ | Linter found 5 errors |
+| 3 | ✓ | ✗ | ✓ | Build command timed out |
+| ... | | | | |</pre>
+
+<h3>Configuration</h3>
+
+<p>The coding loop is configured in <code>sdlc.config.json</code>:</p>
+
+<pre>{
+  "stages": {
+    "coding": {
+      "model": "qwen3.6:35b-a3b",
+      "max_iterations": 5
+    }
+  },
+  "commands": {
+    "lint": "ruff check .",
+    "build": "python -m compileall ."
+  },
+  "timeouts": {
+    "command_seconds": 120
+  }
+}</pre>
+
+<h3>Failure Recovery</h3>
+
+<ul>
+<li><strong>Max iterations reached:</strong> All generated files are deleted from disk. The developer must refine the PRD or architecture and retry with <code>/coding</code></li>
+<li><strong>LLM call failure:</strong> The stage fails immediately. Iteration count is recorded in state</li>
+<li><strong>Re-entering from review:</strong> If the review stage produces a FAIL recommendation, the developer can return to the coding loop (which resets coding status to not_started and preserves the review context)</li>
+</ul>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="stages.html">SDLC Stages</a> — the coding stage in context</li>
+<li><a href="gates.html">Gate-Based Verification</a> — how lint, build, and file checks work</li>
+<li><a href="review-pr.html">Review &amp; PR</a> — re-entering coding from review</li>
+</ul>
+
+</main>
+
+</body>
+</html>

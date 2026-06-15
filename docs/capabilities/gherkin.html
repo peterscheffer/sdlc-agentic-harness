@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Gherkin Specs</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+.highlight { background: #fffde7; border: 1px solid #fff9c4; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html" class="active">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Gherkin Specifications &amp; Requirements Engineering</h2>
+
+<p>
+The requirements stage produces both a structured <code>REQUIREMENTS.md</code> document and <strong>Gherkin .feature files</strong> that serve as executable specifications. The testing stage then uses AI inference to verify that all Gherkin scenarios are implemented in the source code.
+</p>
+
+<h3>Requirements Document</h3>
+
+<p><code>sdlc/requirements/REQUIREMENTS.md</code> contains three structured tables:</p>
+
+<table>
+<tr><th>Section</th><th>Columns</th><th>Purpose</th></tr>
+<tr><td>Functional Requirements</td><td>ID, Description, Priority (High/Medium/Low)</td><td>What the system must do</td></tr>
+<tr><td>Non-Functional Requirements</td><td>ID, Description</td><td>Performance, security, scalability constraints</td></tr>
+<tr><td>Behavioural Requirements</td><td>ID, Scenario, Expected Behaviour</td><td>How the system behaves in specific situations</td></tr>
+</table>
+
+<h3>Gherkin Feature Files</h3>
+
+<p>The LLM generates one <code>.feature</code> file per feature area, written in standard Gherkin syntax:</p>
+
+<pre>Feature: User Authentication
+
+  Scenario: Successful login
+    Given the user is on the login page
+    When they enter valid credentials
+    Then they are redirected to the dashboard
+
+  Scenario: Failed login with invalid password
+    Given the user is on the login page
+    When they enter an invalid password
+    Then an error message is displayed</pre>
+
+<p>Generated feature files are written to <code>sdlc/requirements/</code> with kebab-case filenames (e.g., <code>user-authentication.feature</code>).</p>
+
+<h3>AI-Based Gherkin Compliance Verification</h3>
+
+<div class="highlight">
+<p>The testing stage runs an <strong>AI inference compliance check</strong> that feeds Gherkin feature files and the implemented source code to an LLM. The LLM determines whether all scenarios are adequately addressed in the code.</p>
+</div>
+
+<p>The verification prompt structure (from <code>nodes/testing.py</code>):</p>
+
+<pre>prompt_parts = [
+    "## Gherkin Specifications\n" + gherkin_specs,
+    "\n\n## Source Code\n" + source_files,
+    "\n\n## Instructions\n",
+    "Review the Gherkin feature files and the source code implementation. ",
+    "Determine if ALL the Gherkin scenarios are adequately addressed in the code. ",
+    "Respond with exactly one of:\n",
+    "- 'GHERKIN_COMPLIANCE: pass' if all scenarios are implemented\n",
+    "- 'GHERKIN_COMPLIANCE: fail' with a brief explanation of what is missing",
+]</pre>
+
+<p>The LLM's response is parsed programmatically:</p>
+<ul>
+<li><code>GHERKIN_COMPLIANCE: pass</code> → gate passes</li>
+<li><code>GHERKIN_COMPLIANCE: fail</code> → gate fails, stage status set to failed</li>
+<li>Unexpected response → gate fails</li>
+</ul>
+
+<p>The compliance result is appended to <code>TEST_REPORT.md</code>:</p>
+
+<pre>## Gherkin Compliance
+**Status:** ✓ PASSED
+**Message:** All Gherkin scenarios are implemented</pre>
+
+<h3>Future Enhancement: Executable Gherkin</h3>
+
+<p>As noted in <code>docs/SPEC_GAPS.md</code>, the current AI-based verification is a stepping stone toward fully executable Gherkin. The highest-leverage enhancement would be integrating <code>pytest-bdd</code> to run .feature files as real passing/failing tests, replacing the LLM compliance guess with actual test results.</p>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="verification.html">Dual Verification Methods</a> — AI inference verification approach</li>
+<li><a href="stages.html">SDLC Stages</a> — requirements and testing stages</li>
+<li><a href="coding-loop.html">Coding Loop</a> — how code is generated from specs</li>
+</ul>
+
+</main>
+
+</body>
+</html>

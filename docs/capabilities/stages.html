@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — SDLC Stages</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.stage { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; }
+.stage h4 { margin-top: 0; }
+.stage .meta { font-size: 13px; color: #888; margin-bottom: 8px; }
+.stage .meta span { margin-right: 16px; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html" class="active">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>8-Stage SDLC Pipeline</h2>
+
+<p>
+The harness enforces a sequential, gate-verified pipeline from intent parsing through GitHub PR submission. Each stage produces auditable artefacts and halts until the developer issues the next command. Stages can be skipped (ui-design) or re-entered (coding from review).
+</p>
+
+<table>
+<tr><th>Order</th><th>Stage</th><th>Required</th><th>Output Artefact</th></tr>
+<tr><td>1</td><td><code>planning</code></td><td>Yes</td><td><code>sdlc/planning/PRD.md</code></td></tr>
+<tr><td>2</td><td><code>ui-design</code></td><td>No (auto-skipped if no UI keywords)</td><td><code>sdlc/ui-design/DESIGN.md</code></td></tr>
+<tr><td>3</td><td><code>architecture</code></td><td>Yes</td><td><code>sdlc/architecture/ARCH.md</code></td></tr>
+<tr><td>4</td><td><code>requirements</code></td><td>Yes</td><td><code>sdlc/requirements/REQUIREMENTS.md</code> + <code>.feature</code> files</td></tr>
+<tr><td>5</td><td><code>coding</code></td><td>Yes</td><td>Modified source files + <code>ITERATIONS.md</code></td></tr>
+<tr><td>6</td><td><code>testing</code></td><td>Yes</td><td><code>sdlc/testing/TEST_REPORT.md</code></td></tr>
+<tr><td>7</td><td><code>review</code></td><td>Yes</td><td><code>sdlc/review/REVIEW.md</code></td></tr>
+<tr><td>8</td><td><code>pr</code></td><td>Yes</td><td>GitHub PR URL</td></tr>
+</table>
+
+<div class="stage">
+<h4>1: planning</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: sdlc/planning/PRD.md</span></div>
+<p>Parses the developer's intent string and produces a structured Product Requirements Document. Uses a configurable LLM model to fill in a PRD template with sections including Summary, Goals, Non-Goals, Tasks, Acceptance Criteria, and Affected Files. Validates that the output contains all required section headings and at least one checkbox task before advancing.</p>
+<p><strong>Gates:</strong> PRD.md exists, PRD schema valid, tasks defined</p>
+</div>
+
+<div class="stage">
+<h4>2: ui-design (Optional)</h4>
+<div class="meta"><span class="badge">Optional — auto-skipped</span> <span>Output: sdlc/ui-design/DESIGN.md</span></div>
+<p>Generates a UI design specification conforming to Google Stitch DESIGN.md format. Automatically skipped if the PRD contains no UI-relevant keywords (component, page, view, screen, UI, frontend, form, modal, layout). The developer can force-run or force-skip this stage.</p>
+<p><strong>Gates:</strong> DESIGN.md exists, schema valid (## Overview + ## Components or ## Screens)</p>
+</div>
+
+<div class="stage">
+<h4>3: architecture</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: sdlc/architecture/ARCH.md</span></div>
+<p>Produces an Architecture Decision Record (ARCH.md) that includes an overview, target files table, design decisions, PRINCIPLES compliance section, and risks. Validates the architecture against every rule defined in PRINCIPLES.md — violations with severity:error block the stage.</p>
+<p><strong>Gates:</strong> ARCH.md exists, schema valid, zero error-severity PRINCIPLES violations</p>
+</div>
+
+<div class="stage">
+<h4>4: requirements</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: sdlc/requirements/REQUIREMENTS.md + .feature files</span></div>
+<p>Generates a structured requirements document with functional, non-functional, and behavioural requirements tables. Also produces Gherkin .feature files (one per feature area) that serve as executable specifications for the testing stage.</p>
+<p><strong>Gates:</strong> REQUIREMENTS.md exists, schema valid, at least one .feature file exists</p>
+</div>
+
+<div class="stage">
+<h4>5: coding</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: Modified source files + ITERATIONS.md</span></div>
+<p>Iteratively generates and corrects source code (the "Ralph Loop") until all gate checks pass or max iterations are reached. Each iteration starts with a fresh LLM context to prevent context rot. See <a href="coding-loop.html">Coding Loop</a> for details.</p>
+<p><strong>Gates:</strong> Linter passes, build passes, all target files exist</p>
+</div>
+
+<div class="stage">
+<h4>6: testing</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: sdlc/testing/TEST_REPORT.md</span></div>
+<p>Executes the project's configured test command, captures output and exit code, parses coverage percentages, and writes a structured test report. Also runs an AI-based Gherkin compliance check to verify that all Gherkin scenarios are implemented in source code.</p>
+<p><strong>Gates:</strong> Tests pass, TEST_REPORT.md exists, report not empty, Gherkin compliance, optional coverage threshold</p>
+</div>
+
+<div class="stage">
+<h4>7: review</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: sdlc/review/REVIEW.md</span></div>
+<p>Performs a structured self-review using the git diff, PRD, architecture, and test report as context. Produces a REVIEW.md with change summary, PRD alignment, PRINCIPLES compliance, test evidence, and a PASS/FAIL recommendation. A FAIL recommendation blocks PR submission unless overridden with --force.</p>
+<p><strong>Gates:</strong> REVIEW.md exists, recommendation field present (PASS or FAIL)</p>
+</div>
+
+<div class="stage">
+<h4>8: pr</h4>
+<div class="meta"><span class="badge">Required</span> <span>Output: GitHub PR URL</span></div>
+<p>Commits all SDLC artefacts to the current branch, constructs a structured PR body (summary, changes, test evidence, review outcome, artefact links), and submits via gh CLI. Captures the PR URL in pipeline state.</p>
+<p><strong>Gates:</strong> gh CLI authenticated, not on base branch, PR created successfully</p>
+</div>
+
+<h3>Cross-Stage Workflows</h3>
+
+<p>The pipeline supports non-linear navigation:</p>
+<ul>
+<li><strong>Re-enter planning:</strong> A new intent on an existing pipeline creates a fresh pipeline</li>
+<li><strong>Re-enter coding from review:</strong> If review produces FAIL, return to the coding loop with review context</li>
+<li><strong>Rerun testing:</strong> Re-execute after fixing test failures without re-running coding</li>
+<li><strong>PRD auto-update:</strong> After each completed stage, an LLM evaluates whether the PRD should be updated with new information</li>
+</ul>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="coding-loop.html">Iterative Coding Loop (Ralph Loop)</a></li>
+<li><a href="gates.html">Gate-Based Verification</a></li>
+<li><a href="review-pr.html">Review &amp; PR Submission</a></li>
+</ul>
+
+</main>
+
+</body>
+</html>
