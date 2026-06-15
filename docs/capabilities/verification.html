@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Verification Methods</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+.method-box { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px 24px; margin-bottom: 16px; }
+.method-box.primary { border-left: 4px solid #4caf50; }
+.method-box.secondary { border-left: 4px solid #9c27b0; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html" class="active">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Dual Verification Methods</h2>
+
+<p>
+The harness supports <strong>two verification modalities</strong>, applied with a clear priority: code-based verification first, AI inference second. This ensures that wherever possible, verification is deterministic, fast, and repeatable.
+</p>
+
+<div class="method-box primary">
+<h3>Primary: Code-Based Verification</h3>
+<p>Code-based checks are preferred because they are deterministic, auditable, and produce no LLM cost. These run as shell commands or file system checks:</p>
+<ul>
+<li><strong>Lint commands</strong> — validate code style and static analysis (e.g., <code>ruff</code>, <code>eslint</code>)</li>
+<li><strong>Build commands</strong> — verify compilation or bundling succeeds</li>
+<li><strong>Test commands</strong> — execute the project's test suite, capture exit code and output</li>
+<li><strong>Coverage parsers</strong> — extract and validate code coverage percentages from test output</li>
+<li><strong>File existence checks</strong> — confirm that architecture-targeted files were created on disk</li>
+<li><strong>Schema validation</strong> — check artefact files for required section headings</li>
+</ul>
+<p>Each command is configured in <code>sdlc.config.json</code> under <code>commands</code>:</p>
+<pre>{
+  "commands": {
+    "lint": "ruff check .",
+    "build": "python -m compileall .",
+    "test": "python -m pytest tests/ -q",
+    "coverage_report": null
+  }
+}</pre>
+</div>
+
+<div class="method-box secondary">
+<h3>Secondary: AI Inference Verification</h3>
+<p>AI inference is used where code-based verification is impractical or impossible. The harness invokes an LLM to evaluate compliance:</p>
+<ul>
+<li><strong>Gherkin compliance</strong> — feeds Gherkin .feature files and implemented source code to an LLM, which determines whether all scenarios are adequately addressed. The LLM must respond with exactly <code>GHERKIN_COMPLIANCE: pass</code> or <code>GHERKIN_COMPLIANCE: fail</code></li>
+<li><strong>PRD alignment</strong> — the review stage uses an LLM to verify the git diff satisfies every PRD task and acceptance criterion</li>
+<li><strong>PRINCIPLES compliance</strong> — LLM evaluates the architecture document against project-specific principle rules defined in PRINCIPLES.md</li>
+<li><strong>PRD auto-update</strong> — after each stage, an LLM determines whether newly discovered information should be incorporated into the PRD</li>
+</ul>
+<pre># AI verification prompt pattern from testing.py:
+"Determine if ALL the Gherkin scenarios are adequately
+ addressed in the code. Respond with exactly one of:
+ - 'GHERKIN_COMPLIANCE: pass'
+ - 'GHERKIN_COMPLIANCE: fail'"</pre>
+</div>
+
+<h3>When Each Method Is Used</h3>
+
+<table>
+<tr><th>Stage</th><th>Code-Based Verification</th><th>AI Inference Verification</th></tr>
+<tr><td>planning</td><td>File exists, section headings, task checkboxes</td><td>—</td></tr>
+<tr><td>ui-design</td><td>File exists, section headings</td><td>—</td></tr>
+<tr><td>architecture</td><td>File exists, section headings</td><td>PRINCIPLES compliance against rules</td></tr>
+<tr><td>requirements</td><td>File exists, section headings, feature file glob</td><td>—</td></tr>
+<tr><td>coding</td><td>Lint, build, file existence</td><td>—</td></tr>
+<tr><td>testing</td><td>Test command exit code, coverage parsing</td><td>Gherkin scenario compliance</td></tr>
+<tr><td>review</td><td>File exists, recommendation line parsing</td><td>PRD alignment, PRINCIPLES compliance</td></tr>
+<tr><td>pr</td><td>gh auth, git branch check</td><td>—</td></tr>
+</table>
+
+<h3>Why This Ordering?</h3>
+<p>The code-first approach ensures that verification is <strong>deterministic</strong> (same input always produces same result), <strong>fast</strong> (milliseconds, not seconds), and <strong>zero-cost</strong> (no LLM inference tokens). AI inference is reserved for tasks that require semantic understanding — interpreting natural language requirements, evaluating architectural compliance, or verifying behavioural specifications against implementation.</p>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="gates.html">Gate-Based Verification</a></li>
+<li><a href="gherkin.html">Gherkin Compliance Verification</a></li>
+<li><a href="principles.html">PRINCIPLES.md Enforcement</a></li>
+</ul>
+
+</main>
+
+</body>
+</html>

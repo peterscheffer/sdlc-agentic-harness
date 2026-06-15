@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM SDLC Pipeline — Capabilities</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; transition: all 0.15s; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+.diagram-container { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 24px 0; text-align: center; }
+.diagram-container iframe { width: 100%; height: 520px; border: none; }
+.diagram-note { font-size: 13px; color: #888; margin-top: 8px; }
+.diagram-note a { color: #1976d2; }
+.feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin: 24px 0; }
+.feature-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 24px; transition: box-shadow 0.2s; }
+.feature-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+.feature-card h3 { margin-top: 0; font-size: 17px; }
+.feature-card h3 a { color: #1a1a2e; text-decoration: none; }
+.feature-card h3 a:hover { color: #1976d2; }
+.feature-card p { font-size: 14px; margin-bottom: 0; color: #555; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; margin-right: 6px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 4px 4px 0 0; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; color: #333; }
+tr:nth-child(even) { background: #fafafa; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html" class="active">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>MoM SDLC Pipeline — Capability Overview</h2>
+
+<p>
+<strong>MoM (Matters of Memory)</strong> is a LangGraph-driven SDLC orchestration engine that forces every code change through a structured, gate-verified pipeline — from intent parsing through architecture, code generation, testing, self-review, and GitHub PR submission — with no stage advancing until its hard completion criteria are satisfied.
+</p>
+
+<h3>Core Capabilities</h3>
+
+<div class="feature-grid">
+
+<div class="feature-card">
+<h3><a href="stages.html">8-Stage SDLC Pipeline</a></h3>
+<p>Sequential pipeline from planning through PR, each stage producing auditable artefacts with hard gate checks.</p>
+<span class="badge">planning</span> <span class="badge">coding</span> <span class="badge">testing</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="gates.html">Gate-Based Verification</a></h3>
+<p>Every stage enforces programmatic pass/fail criteria — file existence, schema validation, command exit codes, coverage thresholds.</p>
+<span class="tag">lint</span> <span class="tag">build</span> <span class="tag">coverage</span> <span class="tag">schema validation</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="verification.html">Dual Verification</a></h3>
+<p>Two verification modalities: code-based (lint, build, test) and AI inference (Gherkin compliance, PRD alignment, PRINCIPLES).</p>
+<span class="tag">code-based</span> <span class="tag">AI inference</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="coding-loop.html">Iterative Coding Loop</a></h3>
+<p>The "Ralph Loop" iteratively generates and corrects code until all gates pass, with full context isolation between iterations.</p>
+<span class="tag">configurable iterations</span> <span class="tag">context isolation</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="logging.html">LLM Interaction Logging</a></h3>
+<p>Every LLM call logged to structured JSON files with automatic secrets redaction — full audit trail for every stage.</p>
+<span class="tag">audit trail</span> <span class="tag">secrets redaction</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="state.html">State Persistence</a></h3>
+<p>Pipeline state survives terminal restarts, context wipes, and machine reboots via Pydantic-validated JSON state file.</p>
+<span class="tag">crash recovery</span> <span class="tag">resumable</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="principles.html">PRINCIPLES.md</a></h3>
+<p>Project-specific architectural guardrails enforced during architecture and review stages — error rules block the pipeline.</p>
+<span class="tag">guardrails</span> <span class="tag">custom checks</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="gherkin.html">Gherkin Specs</a></h3>
+<p>Requirements stage generates Gherkin .feature files; testing stage uses AI to verify all scenarios are implemented in code.</p>
+<span class="tag">executable specs</span> <span class="tag">AI compliance check</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="review-pr.html">Review &amp; PR</a></h3>
+<p>Structured self-review with PASS/FAIL recommendation, then automated GitHub PR submission with full artefact links.</p>
+<span class="tag">PR creation</span> <span class="tag">structured review</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="cli.html">CLI Commands</a></h3>
+<p>Full CLI for stage execution, status, reset, autopilot mode, and context injection — scriptable and CI-friendly.</p>
+<span class="tag">autopilot</span> <span class="tag">context injection</span>
+</div>
+
+</div>
+
+<h3>Key Principles</h3>
+
+<ul>
+<li><strong>Spec-first:</strong> Developers specify intent as a structured PRD before any code is written</li>
+<li><strong>Context isolation:</strong> Each stage (and each coding iteration) starts with a fresh LLM context, preventing context rot</li>
+<li><strong>Gate-gated advancement:</strong> No stage can advance until all its hard gate checks pass</li>
+<li><strong>Prefer code verification:</strong> Linting, building, and testing are the primary verification methods</li>
+<li><strong>AI as secondary:</strong> AI inference is used where code-based verification is impractical (Gherkin compliance, PRD alignment)</li>
+<li><strong>Full audit trail:</strong> All artefacts are committed to the repository under <code>sdlc/</code></li>
+<li><strong>Portable:</strong> The entire pipeline can be copied into any project</li>
+</ul>
+
+<h3>Quick Links</h3>
+
+<table>
+<tr><th>Page</th><th>Description</th></tr>
+<tr><td><a href="stages.html">SDLC Stages</a></td><td>Detailed breakdown of all 8 pipeline stages</td></tr>
+<tr><td><a href="gates.html">Gate Verification</a></td><td>How hard gate checks enforce quality at each stage</td></tr>
+<tr><td><a href="verification.html">Verification Methods</a></td><td>Code-based and AI inference verification in depth</td></tr>
+<tr><td><a href="coding-loop.html">Coding Loop</a></td><td>The Ralph Loop — iterative code generation with context isolation</td></tr>
+<tr><td><a href="logging.html">LLM Logging</a></td><td>Structured logging, secrets redaction, token tracking</td></tr>
+<tr><td><a href="state.html">State Persistence</a></td><td>Crash recovery, state schema, stage transitions</td></tr>
+<tr><td><a href="principles.html">PRINCIPLES.md</a></td><td>Project-specific guardrails and enforcement</td></tr>
+<tr><td><a href="gherkin.html">Gherkin Specs</a></td><td>Executable specifications and AI compliance verification</td></tr>
+<tr><td><a href="review-pr.html">Review &amp; PR</a></td><td>Self-review workflow and GitHub PR submission</td></tr>
+<tr><td><a href="cli.html">CLI Reference</a></td><td>All command-line options and subcommands</td></tr>
+<tr><td><a href="config.html">Configuration</a></td><td>sdlc.config.json reference and per-stage model config</td></tr>
+</table>
+
+</main>
+
+</body>
+</html>

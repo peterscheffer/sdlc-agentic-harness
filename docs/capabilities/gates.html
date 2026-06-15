@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Gate Verification</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+.gate-table td:first-child { font-family: monospace; font-size: 13px; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html" class="active">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Gate-Based Verification</h2>
+
+<p>
+Every SDLC stage enforces <strong>hard gate checks</strong> — programmatic pass/fail criteria that block pipeline advancement. No stage can complete until all its gates pass. Gate results are recorded per-stage in <code>.sdlc_state.json</code> for full auditability.
+</p>
+
+<h3>Gate Types</h3>
+
+<table class="gate-table">
+<tr><th>Type</th><th>Description</th><th>Example</th></tr>
+<tr><td>File Existence</td><td>Required artefacts must be on disk</td><td><code>sdlc/planning/PRD.md exists</code></td></tr>
+<tr><td>Schema Validation</td><td>Artefacts must contain required section headings</td><td><code>PRD.md contains ## Summary, ## Goals</code></td></tr>
+<tr><td>Content Validation</td><td>Artefacts must meet content criteria</td><td><code>PRD.md has at least one checkbox task</code></td></tr>
+<tr><td>Command Execution</td><td>Shell commands must exit with code 0</td><td><code>npm run lint, npm run build, pytest</code></td></tr>
+<tr><td>PRINCIPLES Compliance</td><td>Architecture must not violate error-severity rules</td><td><code>ARCH-001 passes</code></td></tr>
+<tr><td>Coverage Threshold</td><td>Code coverage must meet minimum percentage</td><td><code>Coverage 82% >= 80% minimum</code></td></tr>
+<tr><td>Gherkin Compliance</td><td>AI verifies all Gherkin scenarios are implemented</td><td><code>GHERKIN_COMPLIANCE: pass</code></td></tr>
+<tr><td>Authentication</td><td>Required CLIs must be authenticated</td><td><code>gh auth status exits with code 0</code></td></tr>
+<tr><td>Branch Validation</td><td>Must not be on the base branch</td><td><code>Not on 'main' branch</code></td></tr>
+<tr><td>Recommendation Check</td><td>Review recommendation must be PASS (or --force)</td><td><code>recommendation: PASS</code></td></tr>
+</table>
+
+<h3>Per-Stage Gates</h3>
+
+<table>
+<tr><th>Stage</th><th>Gates</th></tr>
+<tr>
+<td><code>planning</code></td>
+<td><span class="tag">PRD.md exists</span> <span class="tag">Schema valid</span> <span class="tag">Tasks defined</span></td>
+</tr>
+<tr>
+<td><code>ui-design</code></td>
+<td><span class="tag">DESIGN.md exists</span> <span class="tag">Schema valid</span></td>
+</tr>
+<tr>
+<td><code>architecture</code></td>
+<td><span class="tag">ARCH.md exists</span> <span class="tag">Schema valid</span> <span class="tag">Zero error PRINCIPLES violations</span></td>
+</tr>
+<tr>
+<td><code>requirements</code></td>
+<td><span class="tag">REQUIREMENTS.md exists</span> <span class="tag">Schema valid</span> <span class="tag">Feature file exists</span></td>
+</tr>
+<tr>
+<td><code>coding</code></td>
+<td><span class="tag">Linter passes</span> <span class="tag">Build passes</span> <span class="tag">Target files exist</span></td>
+</tr>
+<tr>
+<td><code>testing</code></td>
+<td><span class="tag">Tests pass</span> <span class="tag">TEST_REPORT.md exists</span> <span class="tag">Report not empty</span> <span class="tag">Gherkin compliance</span> <span class="tag">Coverage threshold (optional)</span></td>
+</tr>
+<tr>
+<td><code>review</code></td>
+<td><span class="tag">REVIEW.md exists</span> <span class="tag">Recommendation field present</span></td>
+</tr>
+<tr>
+<td><code>pr</code></td>
+<td><span class="tag">gh authenticated</span> <span class="tag">Not on base branch</span> <span class="tag">PR created</span></td>
+</tr>
+</table>
+
+<h3>How Gates Are Run</h3>
+
+<p>
+Gates are executed by the <code>gate_runner.py</code> module, which provides a library of reusable check functions:
+</p>
+
+<pre>GateCheck("prd_exists", "PRD.md exists",
+          lambda: check_file_exists(PRD_PATH))
+GateCheck("linter_passed", "Linter command passes",
+          lambda: check_command_exits_ok(config.commands.lint))
+GateCheck("gherkin_compliance", "Gherkin scenarios implemented",
+          lambda: (gherkin_compliance_passed, gherkin_message))</pre>
+
+<p>
+Each check returns a <code>(passed: bool, message: str)</code> tuple. Results are stored in the per-stage <code>GateResults</code> Pydantic model and persisted to the state file.
+</p>
+
+<h3>Gate Failure Behaviour</h3>
+
+<ul>
+<li>Print the specific failing check with error details</li>
+<li>Do NOT advance the pipeline</li>
+<li>Do NOT modify the state file's completed_stages</li>
+<li>Failed artefacts are removed from disk to prevent stale files</li>
+<li>The developer sees a clear error and can retry the stage</li>
+</ul>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="verification.html">Dual Verification Methods</a> — code-based and AI inference approaches</li>
+<li><a href="principles.html">PRINCIPLES.md Enforcement</a></li>
+<li><a href="gherkin.html">Gherkin Compliance Verification</a></li>
+</ul>
+
+</main>
+
+</body>
+</html>

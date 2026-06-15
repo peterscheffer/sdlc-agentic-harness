@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — PRINCIPLES.md Enforcement</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html" class="active">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>PRINCIPLES.md Enforcement</h2>
+
+<p>
+The harness supports a <strong>developer-authored <code>PRINCIPLES.md</code></strong> at the project root that defines project-specific architectural guardrails. These rules are enforced during the architecture and review stages, providing a mechanism for codifying project conventions, architectural constraints, and quality standards.
+</p>
+
+<h3>PRINCIPLES.md Schema</h3>
+
+<pre># PRINCIPLES
+
+## Project
+name: MyProject
+language: Python
+framework: FastAPI
+
+## Architecture Rules
+
+### ARCH-001
+description: The pipeline follows a strict sequential SDLC
+severity: error
+check: All stage transitions are validated against STAGE_ORDER
+
+### ARCH-002
+description: Pipeline state is persisted to .sdlc_state.json
+severity: error
+check: State is read from .sdlc_state.json on every invocation
+
+## Code Quality Rules
+
+### QUAL-001
+description: All public functions carry type annotations
+severity: warning
+check: Public functions have type hints
+
+## Testing Rules
+
+### TEST-001
+description: Each stage has hard gate checks
+severity: error
+check: Gate checks run and must all pass for stage completion</pre>
+
+<h3>Rule Schema</h3>
+
+<table>
+<tr><th>Field</th><th>Description</th><th>Example</th></tr>
+<tr><td><code>rule_id</code></td><td>Unique identifier (heading level 3)</td><td><code>ARCH-001</code></td></tr>
+<tr><td><code>description</code></td><td>Human-readable description</td><td>"All public functions carry type annotations"</td></tr>
+<tr><td><code>severity</code></td><td><code>error</code> or <code>warning</code></td><td><code>error</code> blocks the pipeline; <code>warning</code> reports but does not block</td></tr>
+<tr><td><code>check</code></td><td>How to verify compliance</td><td>"Public functions have type hints"</td></tr>
+</table>
+
+<h3>Enforcement Points</h3>
+
+<p>PRINCIPLES rules are enforced at two stages in the pipeline:</p>
+
+<h4>Architecture Stage</h4>
+<p>The architecture node loads <code>PRINCIPLES.md</code>, parses all rules, and validates the generated ARCH.md against each rule. Results are written into the <code>## PRINCIPLES Compliance</code> section of ARCH.md. The stage gate check <code>principles_errors_zero</code> ensures zero <code>severity: error</code> violations before the stage can complete:</p>
+
+<pre>[architecture] PRINCIPLES violations detected:
+  ✗ ARCH-001: Pipeline follows strict sequential SDLC [FAIL]
+  ✓ ARCH-002: State persisted to .sdlc_state.json [PASS]</pre>
+
+<h4>Review Stage</h4>
+<p>The review node re-validates the final implementation against all PRINCIPLES rules, including any violations found in the generated code. The review output includes a <code>## PRINCIPLES Compliance</code> section with file and line references for any violations found.</p>
+
+<h4>Graceful Degradation</h4>
+<p>If <code>PRINCIPLES.md</code> is absent, the harness emits a warning but does NOT block execution — all PRINCIPLES checks are simply skipped. This means the pipeline works out of the box on any project without requiring a PRINCIPLES.md file.</p>
+
+<h3>Current Implementation Status</h3>
+<p>The <code>principles_checker.py</code> module parses PRINCIPLES.md rules and validates the architecture document's declared compliance. The actual code-level check functions (<code>_check_forbidden_pattern</code>, <code>_check_missing_type_hints</code>) are currently stub implementations that return <code>False</code> (no violation detected). The architecture validates that ARCH.md <em>declares</em> compliance in its PRINCIPLES Compliance section, but automated code-level enforcement of principle rules is an area for future enhancement.</p>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="verification.html">Verification Methods</a> — how AI inference is used for principles enforcement</li>
+<li><a href="gates.html">Gate-Based Verification</a> — principles_errors_zero gate in architecture stage</li>
+<li><a href="config.html">Configuration</a> — project setup with PRINCIPLES.md</li>
+</ul>
+
+</main>
+
+</body>
+</html>
