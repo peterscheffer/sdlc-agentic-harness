@@ -39,7 +39,7 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
     last_failure_reason = None
     iteration_log = []
 
-    print(f"\n[coding] Ralph Loop started (max {max_iter} iterations)...")
+    print(f"\n[coding] Coding Loop started (max {max_iter} iterations)...")
 
     arch_path = "sdlc/architecture/ARCH.md"
     target_files = _parse_target_files(arch_path)
