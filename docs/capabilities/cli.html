@@ -71,25 +71,6 @@ The harness is invoked via <code>python3 .scripts/langgraph_sdlc.py</code> from 
 <tr><td><code>--stage pr [--force]</code></td><td>Submit the GitHub Pull Request</td></tr>
 </table>
 
-<h3>Pipeline Management</h3>
-
-<table>
-<tr><th>Command</th><th>Description</th></tr>
-<tr><td><code>status</code></td><td>Print current pipeline state: pipeline ID, intent, current stage, completed stages, per-stage statuses, PR URL</td></tr>
-<tr><td><code>reset [--force]</code></td><td>Clear pipeline state and start fresh (requires confirmation unless --force)</td></tr>
-</table>
-
-<h3>All CLI Flags</h3>
-
-<table>
-<tr><th>Flag</th><th>Description</th><th>Example</th></tr>
-<tr><td><code>--stage &lt;s&gt;</code></td><td>Target execution stage</td><td><code>--stage planning</code></td></tr>
-<tr><td><code>--feature / --intent</code></td><td>Feature description (for planning stage)</td><td><code>--feature "add JWT auth"</code></td></tr>
-<tr><td><code>--force</code></td><td>Skip confirmation (reset) or force PR override</td><td><code>--stage pr --force</code></td></tr>
-<tr><td><code>--context &lt;path&gt;</code></td><td>Path to prior conversation context file</td><td><code>--context /tmp/context.txt</code></td></tr>
-<tr><td><code>--autopilot / -a</code></td><td>After requested stage succeeds, run all remaining stages automatically</td><td><code>--stage coding -a</code></td></tr>
-</table>
-
 <h3>Autopilot Mode</h3>
 
 <p>The <code>--autopilot</code> (or <code>-a</code>) flag enables fully automatic pipeline execution. After the requested stage completes successfully, the harness runs all remaining stages without further intervention:</p>
