@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — CLI Reference</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+.cmd { font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.flag { font-family: monospace; color: #1565c0; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html" class="active">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>CLI Command Reference</h2>
+
+<p>
+The harness is invoked via <code>python3 .scripts/langgraph_sdlc.py</code> from the project root. It supports stage execution, pipeline management, and autopilot mode.
+</p>
+
+<h3>Stage Execution</h3>
+
+<table>
+<tr><th>Command</th><th>Description</th></tr>
+<tr><td><code>--stage planning --feature "&lt;intent&gt;"</code></td><td>Start the pipeline for a new feature or change</td></tr>
+<tr><td><code>--stage ui-design</code></td><td>Run the optional UI design stage</td></tr>
+<tr><td><code>--stage architecture</code></td><td>Run the architecture stage</td></tr>
+<tr><td><code>--stage requirements</code></td><td>Run the requirements stage</td></tr>
+<tr><td><code>--stage coding</code></td><td>Run the coding stage (or re-enter the coding loop)</td></tr>
+<tr><td><code>--stage testing</code></td><td>Run the testing stage</td></tr>
+<tr><td><code>--stage review</code></td><td>Run the self-review stage</td></tr>
+<tr><td><code>--stage pr [--force]</code></td><td>Submit the GitHub Pull Request</td></tr>
+</table>
+
+<h3>Pipeline Management</h3>
+
+<table>
+<tr><th>Command</th><th>Description</th></tr>
+<tr><td><code>status</code></td><td>Print current pipeline state: pipeline ID, intent, current stage, completed stages, per-stage statuses, PR URL</td></tr>
+<tr><td><code>reset [--force]</code></td><td>Clear pipeline state and start fresh (requires confirmation unless --force)</td></tr>
+</table>
+
+<h3>All CLI Flags</h3>
+
+<table>
+<tr><th>Flag</th><th>Description</th><th>Example</th></tr>
+<tr><td><code>--stage &lt;s&gt;</code></td><td>Target execution stage</td><td><code>--stage planning</code></td></tr>
+<tr><td><code>--feature / --intent</code></td><td>Feature description (for planning stage)</td><td><code>--feature "add JWT auth"</code></td></tr>
+<tr><td><code>--force</code></td><td>Skip confirmation (reset) or force PR override</td><td><code>--stage pr --force</code></td></tr>
+<tr><td><code>--context &lt;path&gt;</code></td><td>Path to prior conversation context file</td><td><code>--context /tmp/context.txt</code></td></tr>
+<tr><td><code>--autopilot / -a</code></td><td>After requested stage succeeds, run all remaining stages automatically</td><td><code>--stage coding -a</code></td></tr>
+</table>
+
+<h3>Autopilot Mode</h3>
+
+<p>The <code>--autopilot</code> (or <code>-a</code>) flag enables fully automatic pipeline execution. After the requested stage completes successfully, the harness runs all remaining stages without further intervention:</p>
+
+<pre>python3 .scripts/langgraph_sdlc.py --stage planning --feature "add auth" --autopilot</pre>
+
+<p>The autopilot loop runs each stage sequentially, checks for failures, updates the PRD after each stage, and generates metrics. If any stage fails (or the review recommends FAIL), the autopilot halts and reports the issue.</p>
+
+<h3>Context Injection</h3>
+
+<p>The <code>--context</code> flag allows injecting prior conversation context from a file. This context is included in the LLM system prompt and takes precedence over conflicting information in existing artefacts:</p>
+
+<pre>python3 .scripts/langgraph_sdlc.py --stage architecture --context /tmp/discussion.txt</pre>
+
+<p>This is the mechanism that preserves developer decisions across terminal sessions — the OpenCode chat exports the conversation to a file, which is then injected into the pipeline stage.</p>
+
+<h3>Usage Examples</h3>
+
+<pre># Start a new pipeline
+python3 .scripts/langgraph_sdlc.py --stage planning \
+  --feature "Add user authentication with JWT tokens"
+
+# Run architecture stage with prior discussion context
+python3 .scripts/langgraph_sdlc.py --stage architecture \
+  --context /tmp/arch-discussion.txt
+
+# Run testing and then automatically continue through PR
+python3 .scripts/langgraph_sdlc.py --stage testing --autopilot
+
+# Force PR submission despite FAIL recommendation
+python3 .scripts/langgraph_sdlc.py --stage pr --force
+
+# Check pipeline status
+python3 .scripts/langgraph_sdlc.py status
+
+# Reset pipeline state
+python3 .scripts/langgraph_sdlc.py reset --force</pre>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="stages.html">SDLC Stages</a> — detailed stage descriptions</li>
+<li><a href="state.html">State Persistence</a> — status and reset commands</li>
+<li><a href="config.html">Configuration</a> — sdlc.config.json for timeouts and commands</li>
+</ul>
+
+</main>
+
+</body>
+</html>

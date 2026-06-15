@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoM Pipeline — Configuration</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>MoM Pipeline</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html" class="active">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Configuration Reference</h2>
+
+<p>
+The harness is configured via <code>sdlc.config.json</code> at the project root. This file must be committed to the repository and is validated using Pydantic v2.
+</p>
+
+<h3>Complete Schema</h3>
+
+<pre>{
+  "$schema": "sdlc-config/v1",
+  "default_model": "qwen3.6:35b-a3b",
+  "provider": "ollama",
+
+  "stages": {
+    "planning":     { "model": "gemma4:latest" },
+    "ui-design":    { "model": "qwen3.6:35b-a3b" },
+    "architecture": { "model": "gemma4:latest" },
+    "requirements": { "model": "qwen3.6:35b-a3b" },
+    "coding":       { "model": "qwen3.6:35b-a3b", "max_iterations": 5 },
+    "testing":      { "model": "qwen3.6:35b-a3b" },
+    "review":       { "model": "gemma4:31b" }
+  },
+
+  "commands": {
+    "lint": "ruff check .",
+    "build": "",
+    "test": "python -m pytest tests/ -q",
+    "coverage_report": null
+  },
+
+  "coverage": {
+    "enabled": false,
+    "min_percentage": 80
+  },
+
+  "github": {
+    "base_branch": "main"
+  },
+
+  "timeouts": {
+    "llm_call_seconds": 900,
+    "command_seconds": 120
+  }
+}</pre>
+
+<h3>Configuration Sections</h3>
+
+<table>
+<tr><th>Section</th><th>Field</th><th>Required</th><th>Description</th></tr>
+<tr><td rowspan="2">Top-level</td><td><code>default_model</code></td><td>Yes</td><td>Fallback model used for any stage without a specific model configured</td></tr>
+<tr><td><code>provider</code></td><td>No</td><td>LLM provider: <code>ollama</code>, <code>openrouter</code>, or omitted for OpenAI-compatible default</td></tr>
+<tr><td rowspan="2"><code>stages</code></td><td><code>&lt;stage&gt;.model</code></td><td>No</td><td>Per-stage model override (falls back to <code>default_model</code>)</td></tr>
+<tr><td><code>&lt;stage&gt;.max_iterations</code></td><td>No</td><td>Max iterations for the coding loop (default: 5)</td></tr>
+<tr><td rowspan="3"><code>commands</code></td><td><code>lint</code></td><td>No</td><td>Shell command for linting (empty = skip)</td></tr>
+<tr><td><code>build</code></td><td>No</td><td>Shell command for building (empty = skip)</td></tr>
+<tr><td><code>test</code></td><td>Yes</td><td>Shell command for running tests</td></tr>
+<tr><td><code>coverage_report</code></td><td>—</td><td>No</td><td>Path to coverage JSON report for parsing</td></tr>
+<tr><td rowspan="2"><code>coverage</code></td><td><code>enabled</code></td><td>No</td><td>Enable coverage threshold gating (default: false)</td></tr>
+<tr><td><code>min_percentage</code></td><td>No</td><td>Minimum coverage percentage (default: 80)</td></tr>
+<tr><td><code>github</code></td><td><code>base_branch</code></td><td>No</td><td>Target branch for PRs, defaults to <code>main</code></td></tr>
+<tr><td rowspan="2"><code>timeouts</code></td><td><code>llm_call_seconds</code></td><td>No</td><td>Timeout per LLM call (default: 120)</td></tr>
+<tr><td><code>command_seconds</code></td><td>No</td><td>Timeout per shell command (default: 300)</td></tr>
+</table>
+
+<h3>Per-Stage Configuration</h3>
+
+<p>Each stage can have its own model and provider assignment. Stages omitted from the <code>stages</code> dictionary use <code>default_model</code>. This enables using different models for different cognitive tasks:</p>
+
+<table>
+<tr><th>Stage</th><th>Recommended Use</th><th>Typical Model Profile</th></tr>
+<tr><td><code>planning</code></td><td>Document generation, requirement analysis</td><td>Smaller/faster model</td></tr>
+<tr><td><code>architecture</code></td><td>System design, decision records</td><td>Mid-size model with reasoning</td></tr>
+<tr><td><code>coding</code></td><td>Code generation, iterative refinement</td><td>Largest/most capable model</td></tr>
+<tr><td><code>testing</code></td><td>Gherkin compliance verification (AI inference)</td><td>Mid-size capable of code understanding</td></tr>
+<tr><td><code>review</code></td><td>Code review, quality assessment</td><td>Largest model for thorough analysis</td></tr>
+</table>
+
+<h3>Provider Setup</h3>
+
+<table>
+<tr><th>Provider</th><th>Environment Variables</th><th>Base URL</th></tr>
+<tr><td>Ollama (local)</td><td><code>OLLAMA_API_KEY</code> (optional), <code>OLLAMA_BASE_URL</code></td><td><code>http://127.0.0.1:11434/v1</code></td></tr>
+<tr><td>OpenRouter</td><td><code>OPENROUTER_API_KEY</code> (required)</td><td><code>https://openrouter.ai/api/v1</code></td></tr>
+<tr><td>Default (OpenAI-compatible)</td><td><code>OPENAI_API_KEY</code> (required)</td><td>Standard OpenAI endpoint</td></tr>
+</table>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="cli.html">CLI Reference</a> — how to invoke stages</li>
+<li><a href="logging.html">LLM Logging</a> — how models are logged</li>
+<li><a href="principles.html">PRINCIPLES.md</a> — project-specific guardrails</li>
+</ul>
+
+</main>
+
+</body>
+</html>
