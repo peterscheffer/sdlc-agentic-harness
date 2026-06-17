@@ -229,7 +229,7 @@ Review sdlc/planning/PRD.md, then run: /sdlc ui-design  (or /sdlc architecture t
 - `PRINCIPLES.md`
 - The specific target files listed in `ARCH.md`
 
-**LangGraph node behaviour (the Ralph Loop):**
+**LangGraph node behaviour (the Coding Loop):**
 
 This stage is implemented as a LangGraph loop subgraph. The maximum iteration count is configurable in `sdlc.config.json` (default: `5`).
 
@@ -764,7 +764,7 @@ Any stage omitted from `stages` falls back to `default_model`. The `default_mode
 
 | ID | Question | Priority |
 |----|----------|----------|
-| OQ-1 | **Project name** — candidates: Forge, Relay, Conductor, Operator, Ralph. To be decided before first public release. | High |
+| OQ-1 | **Project name** — candidates: Forge, Relay, Conductor, Operator, Coding. To be decided before first public release. | High |
 | OQ-2 | **`ui-design` stage** — should the node call the Stitch API directly to produce the `DESIGN.md`, or should it generate a spec that the developer manually runs through the Stitch interface? | Medium |
 | OQ-3 | **LLM call log format** — structured JSON (machine-readable, supports future tooling) or plain text (human-readable for quick debugging)? | Low |
 | OQ-4 | **`/sdlc reset` archival** — should the command archive the previous pipeline run to `sdlc/archive/<pipeline_id>/` before clearing state, or discard entirely? | Low |

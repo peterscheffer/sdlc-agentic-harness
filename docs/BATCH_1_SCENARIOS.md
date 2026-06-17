@@ -510,7 +510,7 @@ Feature: Architecture Stage – Design Review and PRINCIPLES Validation
 - ✅ Edge cases: missing files, schema violations, PRINCIPLES violations
 
 **Ready for Batch 2?** Batch 2 will cover:
-- Coding Stage (Ralph loop with iteration, context clearing, max iterations)
+- Coding Stage (Coding loop with iteration, context clearing, max iterations)
 - Testing Stage (test execution, coverage checks)
 - Error handling and retry logic across all stages
 
