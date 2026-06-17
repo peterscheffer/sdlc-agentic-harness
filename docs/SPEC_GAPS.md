@@ -38,7 +38,7 @@
 
 | Spec | What it verifies | Approach |
 |------|------------------|----------|
-| Spec-first generation | Code is generated *from* the spec, not independently | Reverse the Ralph loop: feed Gherkin scenarios as the prompt, code must satisfy them |
+| Spec-first generation | Code is generated *from* the spec, not independently | Reverse the Coding loop: feed Gherkin scenarios as the prompt, code must satisfy them |
 | Architecture alignment | Generated code structure matches ARCH.md's target files and design decisions | Cross-check imports, class names, file paths against architect's declaration |
 | Cyclomatic complexity budget | Code stays within spec'd complexity limits | Gate on `radon cc` or `lizard` output against thresholds set in architecture |
 | Test coverage for each file | Every target file has corresponding tests | Gate on per-file coverage, not just global percentage |
