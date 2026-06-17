@@ -63,7 +63,7 @@ tr:nth-child(even) { background: #fafafa; }
 <h2>MoM SDLC Pipeline — Capability Overview</h2>
 
 <p>
-<strong>MoM (Matters of Memory)</strong> is a LangGraph-driven SDLC orchestration engine that forces every code change through a structured, gate-verified pipeline — from intent parsing through architecture, code generation, testing, self-review, and GitHub PR submission — with no stage advancing until its hard completion criteria are satisfied.
+<strong>MoM</strong> is a LangGraph-driven SDLC orchestration engine that forces every code change through a structured, gate-verified pipeline — from intent parsing through architecture, code generation, testing, self-review, and GitHub PR submission — with no stage advancing until its hard completion criteria are satisfied.
 </p>
 
 <h3>Core Capabilities</h3>
@@ -73,7 +73,8 @@ tr:nth-child(even) { background: #fafafa; }
 <div class="feature-card">
 <h3><a href="stages.html">8-Stage SDLC Pipeline</a></h3>
 <p>Sequential pipeline from planning through PR, each stage producing auditable artefacts with hard gate checks.</p>
-<span class="badge">planning</span> <span class="badge">coding</span> <span class="badge">testing</span>
+<span class="badge">Planning</span> <span class="badge">UI Design</span> <span class="badge">Architecture</span> <span class="badge">Requirements</span>
+<span class="badge">Coding</span> <span class="badge">Testing</span> <span class="badge">Review</span> <span class="badge">Pull Request</span>
 </div>
 
 <div class="feature-card">
@@ -90,7 +91,7 @@ tr:nth-child(even) { background: #fafafa; }
 
 <div class="feature-card">
 <h3><a href="coding-loop.html">Iterative Coding Loop</a></h3>
-<p>The "Ralph Loop" iteratively generates and corrects code until all gates pass, with full context isolation between iterations.</p>
+<p>The "Agentic Loop" iteratively generates and corrects code until all gates pass, with full context isolation between iterations.</p>
 <span class="tag">configurable iterations</span> <span class="tag">context isolation</span>
 </div>
 
@@ -126,7 +127,7 @@ tr:nth-child(even) { background: #fafafa; }
 
 <div class="feature-card">
 <h3><a href="cli.html">CLI Commands</a></h3>
-<p>Full CLI for stage execution, status, reset, autopilot mode, and context injection — scriptable and CI-friendly.</p>
+<p>Full CLI for stage execution including autopilot mode, and context injection — scriptable and CI-friendly.</p>
 <span class="tag">autopilot</span> <span class="tag">context injection</span>
 </div>
 
@@ -135,13 +136,13 @@ tr:nth-child(even) { background: #fafafa; }
 <h3>Key Principles</h3>
 
 <ul>
-<li><strong>Spec-first:</strong> Developers specify intent as a structured PRD before any code is written</li>
+<li><strong>Spec-first:</strong> Developers specify intent (requiremets) as structured artefacts before any code is written</li>
 <li><strong>Context isolation:</strong> Each stage (and each coding iteration) starts with a fresh LLM context, preventing context rot</li>
-<li><strong>Gate-gated advancement:</strong> No stage can advance until all its hard gate checks pass</li>
+<li><strong>Stage-gated advancement:</strong> No stage can advance until all its hard gate checks pass</li>
 <li><strong>Prefer code verification:</strong> Linting, building, and testing are the primary verification methods</li>
-<li><strong>AI as secondary:</strong> AI inference is used where code-based verification is impractical (Gherkin compliance, PRD alignment)</li>
+<li><strong>AI as secondary:</strong> AI inference is used where code-based verification is impractical (currently; Gherkin compliance, PRD alignment)</li>
 <li><strong>Full audit trail:</strong> All artefacts are committed to the repository under <code>sdlc/</code></li>
-<li><strong>Portable:</strong> The entire pipeline can be copied into any project</li>
+<li><strong>Portable:</strong> The entire pipeline can be copied into any project, and used across coding harnesses; </li>
 </ul>
 
 <h3>Quick Links</h3>
@@ -151,7 +152,7 @@ tr:nth-child(even) { background: #fafafa; }
 <tr><td><a href="stages.html">SDLC Stages</a></td><td>Detailed breakdown of all 8 pipeline stages</td></tr>
 <tr><td><a href="gates.html">Gate Verification</a></td><td>How hard gate checks enforce quality at each stage</td></tr>
 <tr><td><a href="verification.html">Verification Methods</a></td><td>Code-based and AI inference verification in depth</td></tr>
-<tr><td><a href="coding-loop.html">Coding Loop</a></td><td>The Ralph Loop — iterative code generation with context isolation</td></tr>
+<tr><td><a href="coding-loop.html">Coding Loop</a></td><td>The Coding Loop — iterative code generation with context isolation</td></tr>
 <tr><td><a href="logging.html">LLM Logging</a></td><td>Structured logging, secrets redaction, token tracking</td></tr>
 <tr><td><a href="state.html">State Persistence</a></td><td>Crash recovery, state schema, stage transitions</td></tr>
 <tr><td><a href="principles.html">PRINCIPLES.md</a></td><td>Project-specific guardrails and enforcement</td></tr>

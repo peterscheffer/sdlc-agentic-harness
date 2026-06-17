@@ -102,7 +102,7 @@ The harness enforces a sequential, gate-verified pipeline from intent parsing th
 <div class="stage">
 <h4>5: coding</h4>
 <div class="meta"><span class="badge">Required</span> <span>Output: Modified source files + ITERATIONS.md</span></div>
-<p>Iteratively generates and corrects source code (the "Ralph Loop") until all gate checks pass or max iterations are reached. Each iteration starts with a fresh LLM context to prevent context rot. See <a href="coding-loop.html">Coding Loop</a> for details.</p>
+<p>Iteratively generates and corrects source code (the "Coding Loop") until all gate checks pass or max iterations are reached. Each iteration starts with a fresh LLM context to prevent context rot. See <a href="coding-loop.html">Coding Loop</a> for details.</p>
 <p><strong>Gates:</strong> Linter passes, build passes, all target files exist</p>
 </div>
 
@@ -139,7 +139,7 @@ The harness enforces a sequential, gate-verified pipeline from intent parsing th
 
 <h3>See Also</h3>
 <ul>
-<li><a href="coding-loop.html">Iterative Coding Loop (Ralph Loop)</a></li>
+<li><a href="coding-loop.html">Iterative Coding Loop</a></li>
 <li><a href="gates.html">Gate-Based Verification</a></li>
 <li><a href="review-pr.html">Review &amp; PR Submission</a></li>
 </ul>

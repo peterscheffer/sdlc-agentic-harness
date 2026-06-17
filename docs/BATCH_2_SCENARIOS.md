@@ -3,7 +3,7 @@
 
 ---
 
-## Feature 5: Coding Stage – Iterative Code Generation with Ralph Loop
+## Feature 5: Coding Stage – Iterative Code Generation with Coding Loop
 
 ```gherkin
 Feature: Coding Stage – Iterative Code Generation with Context Isolation
@@ -637,13 +637,13 @@ Feature: Error Handling, Retries, and Recovery
 
 | Feature | Scenario Count | Key Coverage |
 |---------|---|---|
-| Coding Stage (Ralph Loop) | 44 | Iterations 1-N, context clearing, gate checks, max iterations, failure logging |
+| Coding Stage (Coding Loop) | 44 | Iterations 1-N, context clearing, gate checks, max iterations, failure logging |
 | Testing Stage | 30 | Test execution, coverage checks, gate checks, failures, logging |
 | Stage Continuation & Gating | 5 | Gate enforcement, stage ordering, skip prevention |
 | Error Handling & Retries | 5 | Retry logic, timeouts, config validation, recovery |
 
 **Batch 2 Completeness:**
-- ✅ Full Ralph loop mechanics (iterations, context clearing, failure propagation)
+- ✅ Full Coding loop mechanics (iterations, context clearing, failure propagation)
 - ✅ All coding gate checks (linter, build, file existence)
 - ✅ Iteration logging (ITERATIONS.md on failure)
 - ✅ Test command execution and capture

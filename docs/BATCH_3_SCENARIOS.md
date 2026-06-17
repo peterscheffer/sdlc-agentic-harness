@@ -754,7 +754,7 @@ Feature: PRINCIPLES.md Guardrails Enforcement
 | 2 | Planning | 14 | PRD generation, schema validation, gate checks |
 | 3 | UI Design | 14 | Optional skipping, Stitch schema, gate checks |
 | 4 | Architecture | 19 | ARCH.md generation, PRINCIPLES validation |
-| 5 | Coding | 44 | Ralph loop, iterations, context clearing, gate checks |
+| 5 | Coding | 44 | Coding loop, iterations, context clearing, gate checks |
 | 6 | Testing | 30 | Test execution, coverage, test report, gate checks |
 | 7 | Stage Continuation | 5 | Gating, stage ordering, skip prevention |
 | 8 | Error Handling | 5 | Retries, timeouts, config validation |
