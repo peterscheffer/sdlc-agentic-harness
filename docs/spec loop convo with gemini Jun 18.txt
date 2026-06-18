@@ -1,0 +1,67 @@
+This document summarizes a design conversation about replacing "code as source of truth" with a layered, AI-maintained specification as the source of truth, with code treated as a regenerable, disposable artifact. The goal now is to evaluate whether and how this framework could be applied to an existing codebase. Use the sections below as both a reference for the framework and a checklist for what to investigate in the repo.
+
+Core thesis
+
+Pre-AI, code was the source of truth by necessity — every other artifact (docs, diagrams, wikis) drifted out of sync, but code couldn't lie about what it executed. AI code generation breaks that property: code can now be produced and mutated faster than a human can verify it, at a scale where it's no longer the most reliable description of system intent. The proposed fix is to move the source of truth upstream into a structured, layered specification that is human-readable, language-agnostic, and machine-verifiable — and to treat generated code as a transient compilation artifact that can be regenerated, audited against, and discarded.
+
+The original proposed workflow
+
+
+Human converses with AI to define requirements.
+AI selects the most appropriate spec framework/format for the requirement.
+Spec is agreed and emitted as the source of truth.
+AI asks the human how they want the build verified (code/tests, existing libraries, or LLM self-comparison against the spec).
+Human decides; AI builds.
+Any implementation deviation is written back into the spec, with human confirmation.
+Code and spec stay in unison; the spec remains human-readable and reproducible across languages/stacks.
+
+
+The layered spec architecture (the key structural fix)
+
+To stop the spec from either staying readable-but-incomplete or complete-but-unreadable, specs are split into three layers:
+
+
+Layer 1 — Domain (Intent): Plain business logic, e.g. Gherkin/Given-When-Then or structured markdown. Read by humans and product/architecture stakeholders. Never modified by technical implementation details — only by genuine changes in business intent.
+Layer 2 — Contract (Topology): Interface and state agreements between components — OpenAPI, AsyncAPI, Protobuf, state machine schemas (XState/ASL). Read by technical leads and code-generators.
+Layer 3 — Reality (Mechanics): Runtime/environmental detail discovered during implementation — retry policies, concurrency limits, infra-as-code, property-based test suites. This is where implementation drift gets absorbed without bloating Layer 1.
+
+
+Rule of thumb: when the AI hits an environmental constraint it didn't anticipate (e.g., a flaky downstream API forcing a retry queue), it's only allowed to write that into Layer 3, never Layer 1, and the human reviews the Layer 3 addition explicitly.
+
+Proposed slash-command interface
+
+
+/spec — converses with the human, emits the Layer 1/2 spec, defines the verification approach.
+/edge — adversarial pass to surface edge cases and omissions the human didn't think to specify.
+/verify — runs deterministic build/integration/test/deploy checks against the spec (explicitly not relying on the LLM grading its own work).
+/truth — writes confirmed implementation deviations back into the spec (specifically Layer 3), keeping spec and code in sync.
+
+
+Critical gaps identified, and where they stand
+
+GapStatusSpec illusion — a structured-looking spec feels complete even when it's missing things the human didn't know to ask for (security, scale, compliance)Partially mitigated by /edge, but /edge is bounded by the same model's training-data blind spots — strongest on generic omissions, weak on org-specific riskVerification paradox — LLM self-comparison against its own spec is not independent verification; it shares the same blind spots that caused the misinterpretationResolved in principle: force /verify onto deterministic, non-probabilistic checks (real test suites, integration tests), never pure LLM judgmentDrift chaos / spec bloat — capturing every implementation deviation either bloats the spec or breaks readabilityResolved structurally via the 3-layer split — drift absorbed into Layer 3, Layer 1 stays cleanDetection problem — a deviation that no verification method catches never gets written back; drift can be silentLargely unresolved. Mitigations proposed: spec-mutation testing (deliberately break a spec clause and confirm the test suite actually fails — if not, that clause has zero real coverage) and differential implementation (two independent agents/models implement the same spec; disagreement signals spec ambiguity)Confirmation fatigue — humans approving a long stream of /truth updates degrade in attention over time, enabling slow, unnoticed driftMitigated via risk-tiered review (low-risk changes batched/summarized, high-risk changes forced into isolated synchronous review), periodic full-history audits, and second-approver thresholds for high-risk changesEconomic paradox — sufficiently rigorous Layer 3 specs become as dense as code itself, undermining the "spec replaces code" premiseAccepted as a real limit, not solved. Recommended approach: explicit criticality tiering — full spec rigor only where failure is expensive (auth, payments, compliance), explicit "code-is-truth zones" elsewhere where exhaustive specification isn't economicalContext window vs. ecosystem — an agent building against a local spec can pass it perfectly yet break on integration because it lacks visibility into other services' real runtime behaviorUnresolved in this conversation
+
+What "production-ready, enterprise-grade" actually requires
+
+Slash commands are a fine interface but not an architecture — they're stateless triggers, and the real machinery needs to sit behind them:
+
+
+Stateful orchestration, not chat context — a workflow engine that tracks each feature's lifecycle (spec → edge-case → approved → built → verified → truth-synced → deployed) independent of any single conversation session.
+Sandboxed, permission-scoped execution — /spec and /edge need zero execution capability (pure reasoning). Build//verify need disposable sandboxes with no path to production credentials. Infra changes are a separate, more restricted tier: agents can generate a Terraform plan but should never get apply permissions — that's a mandatory human gate, no exceptions.
+Genuine model/agent diversity for adversarial and differential checks — using the same model to author and "adversarially" critique its own spec mostly reproduces its own blind spots; real value comes from different providers or distinctly different conditioning.
+Git as the governance layer — map /truth approval onto existing PR review, CODEOWNERS, and required-reviewer tooling instead of building a bespoke approval UI. Reuses existing audit trail and rollback semantics.
+Deterministic CI as the verification backbone — /verify should be the existing build/test/deploy pipeline plus spec-mutation and differential-implementation checks bolted on, never an LLM call judging conformance unsupported by hard checks.
+Observability and hard budget/cost caps — every tool call, package install, and compute dollar logged and capped, so a runaway agentic loop fails safely instead of escalating overnight.
+
+
+Suggested questions to investigate in the existing codebase
+
+Since the goal is assessing fit against a real repo, the framework's biggest cost driver is how much of Layers 2 and 3 already exist implicitly versus needing to be authored from scratch:
+
+
+Is there an existing test suite and CI/CD pipeline that could serve as the deterministic /verify backbone today, or would that need to be built first?
+Do API contracts already exist anywhere (OpenAPI, Protobuf, GraphQL SDL, JSON Schema), or would Layer 2 need to be reverse-engineered from current endpoints?
+Is infrastructure already defined as code (Terraform/CDK/Pulumi), or is it manually managed — this determines how much of Layer 3 is "extract and formalize" versus "write from nothing"?
+How much business logic exists only as undocumented code/tribal knowledge with no PRD, ticket, or doc trail — this is where Layer 1 authoring will be most expensive and also most valuable.
+What does the current PR/review process look like (required reviewers, CODEOWNERS), and could it be repurposed directly for spec governance rather than building new approval tooling?
+Where are the genuinely high-stakes areas (auth, payments, anything regulated) that should get full three-layer rigor first, versus lower-stakes code that's a better candidate for the "code-is-truth zone" rather than full specification?
