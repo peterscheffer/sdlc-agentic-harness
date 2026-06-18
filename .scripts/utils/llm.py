@@ -23,6 +23,7 @@ def call_llm(
     system_prompt: Optional[str] = None,
     iteration: Optional[int] = None,
     conversation_context: str = "",
+    pipeline_id: str = "",
 ) -> str:
     log_path = _get_log_path(stage, iteration)
     model_name = get_stage_model(config, stage)
@@ -101,7 +102,10 @@ def call_llm(
 
             llm = ChatOpenAI(**llm_kwargs)
             log_entry["provider"] = provider or "default"
-            result = llm.invoke(messages)
+            ls_metadata = {"stage": stage, "pipeline_id": pipeline_id or "unknown"}
+            if iteration is not None:
+                ls_metadata["iteration"] = iteration
+            result = llm.invoke(messages, config={"metadata": ls_metadata})
             content = result.content
             log_entry["response"] = content
             if hasattr(result, "usage_metadata"):

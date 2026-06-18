@@ -77,6 +77,7 @@ def execute_architecture(state: SDLCPersistedState, config: SDLCConfig, conversa
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         print(f"\n[architecture] \u2717 LLM call failed: {e}")

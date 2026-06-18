@@ -73,6 +73,7 @@ def execute_review(state: SDLCPersistedState, config: SDLCConfig, conversation_c
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         print(f"[review] \u2717 LLM call failed: {e}")

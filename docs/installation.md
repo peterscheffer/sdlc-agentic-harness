@@ -41,4 +41,11 @@ pip install langchain-openai pydantic
    export OPENAI_API_KEY=KEY
    export OPENAI_API_BASE=http://127.0.0.1:11434/v1   # for local models
    ```
-5. Optionally copy `.opencode/commands/sdlc.md` for `/sdlc` slash command support
+5. (Optional) LangSmith observability — create `.env` at project root:
+   ```
+   LANGSMITH_TRACING=true
+   LANGSMITH_API_KEY=lsv2_pt_...
+   LANGSMITH_PROJECT=mom-sdlc
+   ```
+   Each LLM call is traced with `stage`, `pipeline_id`, and `iteration` metadata for filtering in the LangSmith UI.
+6. Optionally copy `.opencode/commands/sdlc.md` for `/sdlc` slash command support
