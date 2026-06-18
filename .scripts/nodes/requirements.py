@@ -95,6 +95,7 @@ def execute_requirements(state: SDLCPersistedState, config: SDLCConfig, conversa
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         print(f"\n[requirements] \u2717 LLM call failed: {e}")

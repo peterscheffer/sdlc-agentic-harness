@@ -149,6 +149,7 @@ def update_prd_if_needed(
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError:
         print(f"[{stage_id}] PRD update check skipped (LLM error)")

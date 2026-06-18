@@ -71,6 +71,7 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         print(f"\n[planning] \u2717 LLM call failed: {e}")
