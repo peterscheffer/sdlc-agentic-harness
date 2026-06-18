@@ -67,6 +67,7 @@ def execute_ui_design(state: SDLCPersistedState, config: SDLCConfig, conversatio
             config=config,
             system_prompt=system_prompt,
             conversation_context=conversation_context,
+            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         print(f"\n[ui-design] \u2717 LLM call failed: {e}")
