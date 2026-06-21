@@ -3,6 +3,15 @@
 .env.local
 .sdlc_state.json
 
+# Pipeline runtime output (sdlc/templates/ is the only tracked subdir)
+sdlc/logs/
+sdlc/planning/
+sdlc/architecture/
+sdlc/requirements/
+sdlc/coding/
+sdlc/testing/
+sdlc/review/
+
 # Python
 __pycache__/
 *.py[cod]
