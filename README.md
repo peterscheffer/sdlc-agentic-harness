@@ -89,6 +89,13 @@ If you use [OpenCode](https://opencode.ai), the [`.opencode/commands/`](.opencod
 directory exposes the stages as slash commands (`/plan`, `/architect`,
 `/coding`, `/requirements`, `/testing`, `/review`, `/pr`, `/ui-design`).
 
+
+### Claude slash commands
+
+If you use [Claude](https://claude.ai), the [`.claude/commands/`](.claude/commands)
+directory exposes the stages as slash commands (`/plan`, `/architect`,
+`/coding`, `/requirements`, `/testing`, `/review`, `/pr`, `/ui-design`).
+
 ## Configuration
 
 [`sdlc.config.json`](sdlc.config.json) controls per-stage models, the provider,
