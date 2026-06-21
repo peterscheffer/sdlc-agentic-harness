@@ -131,8 +131,9 @@ Tests run without real API calls via a mock LLM (`SDLC_USE_MOCK_LLM=1`).
 ## Documentation
 
 - [docs/installation.md](docs/installation.md) — setup and configuration
-- [docs/PRINCIPLES.md](docs/PRINCIPLES.md) — architecture rules the pipeline enforces
-- [docs/capabilities/](docs/capabilities) — capability reference (HTML)
+- [docs/PRINCIPLES.md](docs/PRINCIPLES.md) — architecture tempplate for rule enforcement
+- [sdlc/templates/PRD.md](sdlc/templates/PRD.md) — PRD template 
+- [capabilities](docs/) — capability reference (HTML)
 
 ## Contributing
 
