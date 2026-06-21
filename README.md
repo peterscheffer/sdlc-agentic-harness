@@ -60,34 +60,31 @@ rm -rf /tmp/sdlc-harness
 Then start Claude Code or OpenCode from your project folder:
 
 ```bash
-claude   # or: opencode
+claude
+```
+
+```bash
+opencode
 ```
 
 ## Usage
 
-Use it inside Claude or Opencode:
+Use slash commands inside Claude or Opencode, starting with:
 
 ```bash
 /plan
 ```
 
-Run a single stage:
+Alternatively, you can run a single stagevia the CLI:
 
 ```bash
 python3 .scripts/sdlc_harness.py --stage planning --feature "Add CSV export to the reports page"
 ```
 
-Run a stage and then auto-run all remaining stages:
+You can auto-run all remaining stages after architecture:
 
 ```bash
-python3 .scripts/sdlc_harness.py --stage planning --feature "..." --autopilot
-```
-
-Inspect or reset pipeline state:
-
-```bash
-python3 .scripts/sdlc_harness.py status
-python3 .scripts/sdlc_harness.py reset [--force]
+python3 .scripts/sdlc_harness.py --stage coding --feature "..." --autopilot
 ```
 
 | Flag | Purpose |
