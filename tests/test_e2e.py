@@ -12,17 +12,24 @@ class TestFeature12EndToEnd:
     def test_happy_path_all_stages_succeed(self, tmp_project):
         write_config(tmp_project)
         r1 = run_pipeline(tmp_project, "planning", "add JWT authentication")
-        assert r1.returncode == 0
+        assert r1.returncode == 0, f"Planning failed: {r1.stderr}"
         r2 = run_pipeline(tmp_project, "ui-design")
+        assert r2.returncode == 0, f"UI Design failed: {r2.stderr}"
         r3 = run_pipeline(tmp_project, "architecture")
-        assert r3.returncode == 0
+        assert r3.returncode == 0, f"Architecture failed: {r3.stderr}"
+        r3b = run_pipeline(tmp_project, "requirements")
+        assert r3b.returncode == 0, f"Requirements failed: {r3b.stderr}"
         write_artefact(tmp_project, "src/feature.py", "# code")
         r4 = run_pipeline(tmp_project, "coding")
+        assert r4.returncode == 0, f"Coding failed: {r4.stderr}"
         r5 = run_pipeline(tmp_project, "testing")
+        assert r5.returncode == 0, f"Testing failed: {r5.stderr}"
         write_artefact(tmp_project, "sdlc/review/REVIEW.md",
                       "## Recommendation\n\nrecommendation: PASS\n")
         r6 = run_pipeline(tmp_project, "review")
+        assert r6.returncode == 0, f"Review failed: {r6.stderr}"
         r7 = run_pipeline(tmp_project, "pr")
+        assert r7.returncode == 0, f"PR failed: {r7.stderr}"
         s = state_content(tmp_project)
         assert s["current_stage"] == "pr" or s["stages"]["pr"]["status"] != "not_started"
 

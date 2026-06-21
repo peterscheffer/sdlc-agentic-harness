@@ -316,7 +316,6 @@ def _check_gherkin_compliance(config: SDLCConfig) -> tuple[bool, str]:
             stage="gherkin-compliance",
             config=config,
             system_prompt=system_prompt,
-            pipeline_id=state.pipeline_id,
         )
     except RuntimeError as e:
         return False, f"LLM compliance check failed: {e}"
