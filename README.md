@@ -1,12 +1,11 @@
 # SDLC Agentic Harness
 
-A LangGraph-style SDLC orchestration engine that forces every code change
+A stage-gated SDLC orchestration engine that forces every code change
 through a structured, gate-verified pipeline — from intent parsing through
 architecture, code generation, testing, self-review, and GitHub PR submission —
 with no stage advancing until its hard completion criteria are satisfied.
 
-It's built for solo developers who want disciplined, repeatable, AI-assisted
-development instead of ad-hoc prompting.
+It's built for AI engineers who want specification-specific results, verified outcomes with their own definition of verification, LLM routing based on cost & capability, configurable stages and models.  Specifically, this harness is designed to enforce your coding practices, and your architecture practices.  It does this by making your verification handler plug and play - you write the StageGate GateCheck, and the harness will run it, and unless it passes, the stage isn't complete.  This leaves you to be hands-off and worry free while doing loop coding.
 
 ## Capabilities
 Read about this harness's capablities in the [Documentation](https://peterscheffer.github.io/sdlc-agentic-harness/index.html)
