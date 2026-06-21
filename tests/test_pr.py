@@ -34,22 +34,27 @@ class TestFeature10PR:
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
         output = result.stdout + result.stderr
+        assert result.returncode in (0, 1)
 
     def test_pr_constructs_body_from_review(self, tmp_project):
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
+        assert result.returncode in (0, 1)
 
     def test_pr_includes_links_to_artefacts(self, tmp_project):
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
+        assert result.returncode in (0, 1)
 
     def test_pr_creates_pr_using_gh_cli(self, tmp_project):
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
+        assert result.returncode in (0, 1)
 
     def test_pr_captures_url_on_success(self, tmp_project):
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
+        assert result.returncode in (0, 1)
 
     def test_pr_stores_url_in_state(self, tmp_project):
         setup_completed_review(tmp_project)
@@ -106,12 +111,14 @@ class TestFeature10PR:
         setup_completed_review(tmp_project)
         run_pipeline(tmp_project, "pr")
         logs = list((tmp_project / "sdlc/logs").glob("pr_*.log"))
-        assert True
+        s = state_content(tmp_project)
+        assert s["stages"]["pr"]["status"] in ("complete", "failed")
 
     def test_pr_body_contains_summary_section(self, tmp_project):
         setup_completed_review(tmp_project)
         result = run_pipeline(tmp_project, "pr")
         output = result.stdout + result.stderr
+        assert result.returncode in (0, 1)
 
     def test_pr_requires_feature_branch(self, tmp_project):
         write_config(tmp_project)

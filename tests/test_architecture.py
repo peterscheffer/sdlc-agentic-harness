@@ -1,3 +1,5 @@
+import pytest
+
 from conftest import (
     write_config, write_state, write_artefact, write_principles,
     run_pipeline, state_content, assert_in_output, setup_completed_planning,
@@ -101,8 +103,8 @@ class TestFeature4Architecture:
         setup_completed_planning(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", ARCH_WITH_VIOLATIONS)
         run_pipeline(tmp_project, "architecture")
-        content = (tmp_project / "sdlc/architecture/ARCH.md").read_text()
-        assert True
+        s = state_content(tmp_project)
+        assert s["stages"]["architecture"]["status"] == "complete"
 
     def test_fail_architecture_gate_with_error_violations(self, tmp_project):
         write_config(tmp_project)
@@ -140,8 +142,9 @@ class TestFeature4Architecture:
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
         s = state_content(tmp_project)
-        assert True
+        assert s["stages"]["architecture"]["artefact"] is None
 
+    @pytest.mark.todo
     def test_fail_if_arch_missing_required_section(self, tmp_project):
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
@@ -149,8 +152,10 @@ class TestFeature4Architecture:
         write_principles(tmp_project)
         run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
-        if s["stages"]["architecture"]["gate_results"].get("arch_schema_valid") is False:
-            assert True
+        assert s["stages"]["architecture"]["status"] in ("complete", "failed")
+        # TODO: Once pipeline validates pre-written ARCH.md schema, assert:
+        # gate = s["stages"]["architecture"]["gate_results"]
+        # assert gate.get("arch_schema_valid") is False
 
     def test_handle_missing_principles_gracefully(self, tmp_project):
         write_config(tmp_project)
@@ -158,6 +163,7 @@ class TestFeature4Architecture:
         result = run_pipeline(tmp_project, "architecture")
         content = (tmp_project / "sdlc/architecture/ARCH.md").read_text()
         has_warning = "Not found" in content or "Warning" in content or "skipped" in content.lower()
+        assert has_warning, f"Expected warning about missing PRINCIPLES in ARCH.md"
 
     def test_update_state_on_architecture_completion(self, tmp_project):
         write_config(tmp_project)
@@ -182,8 +188,7 @@ class TestFeature4Architecture:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", ARCH_WITH_VIOLATIONS)
         result = run_pipeline(tmp_project, "architecture")
         output = result.stdout + result.stderr
-        if "PRINCIPLES" in output.upper():
-            assert True
+        assert "PRINCIPLES" in output.upper() or "violation" in output.lower()
 
     def test_log_llm_calls_architecture(self, tmp_project):
         write_config(tmp_project)

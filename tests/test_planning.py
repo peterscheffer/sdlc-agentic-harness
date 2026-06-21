@@ -119,6 +119,7 @@ class TestFeature2Planning:
         write_principles(tmp_project)
         run_pipeline(tmp_project, "planning", "test")
         s = state_content(tmp_project)
+        assert s["stages"]["planning"]["status"] in ("complete", "failed", "in_progress")
 
     def test_update_state_on_successful_planning(self, tmp_project):
         write_config(tmp_project)

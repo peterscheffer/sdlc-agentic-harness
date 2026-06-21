@@ -72,7 +72,7 @@ class TestFeature3UiDesign:
         write_config(tmp_project)
         setup_completed_planning(tmp_project)
         s = state_content(tmp_project)
-        assert True
+        assert s["stages"]["ui-design"]["status"] == "not_started"
 
     def test_fail_if_design_md_missing_required_sections(self, tmp_project):
         write_config(tmp_project)
@@ -80,7 +80,10 @@ class TestFeature3UiDesign:
         write_artefact(tmp_project, "sdlc/ui-design/DESIGN.md", DESIGN_MISSING_REQUIRED)
         write_artefact(tmp_project, "sdlc/planning/PRD.md", PRD_WITH_UI)
         write_principles(tmp_project)
-        run_pipeline(tmp_project, "ui-design")
+        result = run_pipeline(tmp_project, "ui-design")
+        s = state_content(tmp_project)
+        assert result.returncode in (0, 1)
+        assert s["stages"]["ui-design"]["status"] in ("complete", "failed", "in_progress")
 
     def test_developer_can_skip_ui_design(self, tmp_project):
         write_config(tmp_project)

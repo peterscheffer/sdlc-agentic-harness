@@ -57,7 +57,7 @@ class TestFeature12EndToEnd:
         write_config(tmp_project, {"commands": {"test": "echo 'ok'"}})
         r2 = run_pipeline(tmp_project, "testing")
         s = state_content(tmp_project)
-        assert True
+        assert r2.returncode == 0 or s["stages"]["testing"]["status"] == "complete"
 
     def test_no_data_loss_across_terminal_sessions(self, tmp_project):
         write_config(tmp_project)
@@ -95,7 +95,7 @@ class TestFeature12EndToEnd:
                       "## Recommendation\n\nrecommendation: PASS\n")
         run_pipeline(tmp_project, "review")
         s = state_content(tmp_project)
-        assert True
+        assert s["stages"]["review"]["status"] == "complete"
 
     def test_all_artefacts_committed(self, tmp_project):
         write_config(tmp_project)

@@ -10,6 +10,9 @@ from typing import Optional
 
 import pytest
 
+def pytest_configure(config):
+    config.addinivalue_line("markers", "todo: test not yet implemented or blocked by known issues")
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = PROJECT_ROOT / ".scripts"
 PIPELINE_SCRIPT = SCRIPTS_DIR / "langgraph_sdlc.py"
