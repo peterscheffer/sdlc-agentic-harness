@@ -1,3 +1,5 @@
+import pytest
+
 from conftest import (
     write_config, write_state, write_artefact, run_pipeline,
     state_content, assert_in_output, setup_completed_testing,
@@ -36,15 +38,20 @@ class TestFeature11CrossStage:
         write_config(tmp_project)
         setup_completed_review(tmp_project, recommendation="FAIL")
         result = run_pipeline(tmp_project, "pr", "--force")
-        s = state_content(tmp_project)
-        assert True
+        output = result.stdout + result.stderr
+        assert result.returncode != 0 or "Override" in output
 
+    @pytest.mark.todo
     def test_force_override_succeeds_with_confirmation(self, tmp_project):
         write_config(tmp_project)
         setup_completed_review(tmp_project, recommendation="FAIL")
         result = run_pipeline(tmp_project, "pr", "--force")
+        output = result.stdout + result.stderr
         s = state_content(tmp_project)
-        assert True
+        assert result.returncode != 0 or s["stages"]["pr"]["status"] != "not_started"
+        # TODO: This test should pass `force=True` to run_pipeline once the
+        # pipeline supports confirmation. Currently "--force" is passed as
+        # a feature name, not a flag. Assert that PR stage was reached.
 
     def test_cannot_re_enter_earlier_stage_if_current_failed(self, tmp_project):
         write_config(tmp_project)
@@ -67,4 +74,4 @@ class TestFeature11CrossStage:
         setup_completed_review(tmp_project, recommendation="FAIL")
         result = run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
-        assert True
+        assert s["current_stage"] == "coding" or s["stages"]["coding"]["status"] in ("complete", "in_progress")

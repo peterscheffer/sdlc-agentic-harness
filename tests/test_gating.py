@@ -42,7 +42,8 @@ class TestFeature7Gating:
         s["completed_stages"] = [x for x in s["completed_stages"] if x != "testing"]
         write_state(tmp_project, s)
         result = run_pipeline(tmp_project, "testing")
-        assert True
+        s = state_content(tmp_project)
+        assert s["stages"]["testing"]["status"] in ("complete", "failed")
 
     def test_display_gate_check_results(self, tmp_project):
         write_config(tmp_project)

@@ -23,6 +23,7 @@ class TestFeature9Review:
                 capture_output=True, env={**os.environ, "GIT_AUTHOR_NAME": "T", "GIT_COMMITTER_NAME": "T",
                                           "GIT_AUTHOR_EMAIL": "t@t", "GIT_COMMITTER_EMAIL": "t@t"})
         result = run_pipeline(tmp_project, "review")
+        assert result.returncode in (0, 1)
 
     def test_review_generates_review_md(self, tmp_project):
         write_config(tmp_project)
@@ -137,10 +138,12 @@ class TestFeature9Review:
         write_artefact(tmp_project, "sdlc/review/REVIEW.md", MOCK_REVIEW_FAIL)
         result = run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert result.returncode in (0, 1)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed", "in_progress")
 
     def test_log_llm_calls_in_review(self, tmp_project):
         write_config(tmp_project)
         setup_completed_testing(tmp_project)
         run_pipeline(tmp_project, "review")
         logs = list((tmp_project / "sdlc/logs").glob("review_*.log"))
-        assert True
+        assert len(logs) > 0

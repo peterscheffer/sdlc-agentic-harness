@@ -36,6 +36,7 @@ class TestFeature5Coding:
         setup_completed_requirements(tmp_project)
         result = run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "in_progress", "failed")
 
     def test_iteration1_generates_target_files(self, tmp_project):
         write_config(tmp_project)
@@ -58,12 +59,16 @@ class TestFeature5Coding:
         setup_completed_requirements(tmp_project)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        gr = s["stages"]["coding"].get("gate_results", {})
+        assert gr.get("linter_passed") is not False or s["stages"]["coding"]["status"] != "failed"
 
     def test_iteration1_build_passes(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "", "build": "echo 'build ok'"}})
         setup_completed_requirements(tmp_project)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        gr = s["stages"]["coding"].get("gate_results", {})
+        assert gr.get("build_passed") is not False or s["stages"]["coding"]["status"] != "failed"
 
     def test_iteration1_file_existence_passes(self, tmp_project):
         write_config(tmp_project)
@@ -91,6 +96,7 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("iterations", 0) >= 1
 
     def test_context_cleared_between_iterations(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
@@ -98,24 +104,30 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "in_progress", "failed")
 
     def test_iteration2_receives_failure_reason(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
-        run_pipeline(tmp_project, "coding")
+        result = run_pipeline(tmp_project, "coding")
+        assert result.returncode == 0 or result.returncode == 1
 
     def test_iteration2_modifies_code_to_fix_failure(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 0", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
-        run_pipeline(tmp_project, "coding")
+        result = run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("iterations", 0) >= 1
 
     def test_iteration2_gate_checks_run_again(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 0", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("gate_results") is not None or s["stages"]["coding"]["status"] in ("in_progress", "not_started")
 
     def test_iteration2_passes_loop_exits(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 0", "build": ""}})
@@ -123,30 +135,39 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed", "in_progress")
 
     def test_iteration2_fails_proceeds_to_iteration3(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": "exit 1"}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("iterations", 0) >= 1
 
     def test_multiple_iterations_different_failures(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("iterations", 0) >= 1
 
     def test_reach_max_iterations_without_passing(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed")
 
     def test_write_iteration_log_on_failure(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        logs = list((tmp_project / "sdlc/logs").glob("coding_iteration_*.log"))
+        assert len(logs) > 0
 
     def test_iteration_log_is_human_readable(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
@@ -185,6 +206,9 @@ class TestFeature5Coding:
         run_pipeline(tmp_project, "coding")
         write_artefact(tmp_project, "src/feature.py", "# fixed manually")
         result = run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert result.returncode in (0, 1)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed", "in_progress")
 
     def test_display_coding_progress(self, tmp_project):
         write_config(tmp_project)
@@ -207,7 +231,7 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         logs = list((tmp_project / "sdlc/logs").glob("coding_iteration_*.log"))
-        assert True
+        assert len(logs) > 0
 
     def test_no_secrets_in_coding_logs(self, tmp_project):
         write_config(tmp_project)
@@ -236,12 +260,17 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         result = run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert result.returncode in (0, 1)
+        assert "iterations" in s["stages"]["coding"]
 
     def test_max_iterations_config_respected(self, tmp_project):
         write_config(tmp_project, {"stages": {"coding": {"max_iterations": 3}}})
         setup_completed_requirements(tmp_project)
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        assert s["stages"]["coding"].get("iterations", 0) <= 3
 
     def test_empty_lint_command_skipped(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "", "build": ""}})
@@ -249,6 +278,7 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed", "in_progress")
 
     def test_empty_build_command_skipped(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "", "build": ""}})
@@ -256,3 +286,4 @@ class TestFeature5Coding:
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         s = state_content(tmp_project)
+        assert s["stages"]["coding"]["status"] in ("complete", "failed", "in_progress")

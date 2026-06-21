@@ -63,7 +63,8 @@ class TestFeature14Principles:
                                         "Violation: ARCH-001 not satisfied"))
         run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
-        assert True
+        gate = s["stages"]["architecture"]["gate_results"]
+        assert gate.get("principles_errors_zero") is False or s["stages"]["architecture"]["status"] == "complete"
 
     def test_warning_severity_violations_do_not_block(self, tmp_project):
         write_config(tmp_project)
@@ -71,7 +72,9 @@ class TestFeature14Principles:
         setup_completed_planning(tmp_project)
         run_pipeline(tmp_project, "architecture")
         content = (tmp_project / "sdlc/architecture/ARCH.md").read_text()
-        assert True
+        s = state_content(tmp_project)
+        assert len(content) > 0
+        assert s["stages"]["architecture"]["status"] == "complete"
 
     def test_principles_violations_included_in_review(self, tmp_project):
         write_config(tmp_project)
@@ -112,4 +115,4 @@ class TestFeature14Principles:
         setup_completed_planning(tmp_project)
         run_pipeline(tmp_project, "architecture")
         logs = list((tmp_project / "sdlc/logs").glob("architecture_*.log"))
-        assert True
+        assert len(logs) > 0

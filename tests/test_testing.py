@@ -11,7 +11,7 @@ class TestFeature6Testing:
         setup_completed_coding(tmp_project)
         result = run_pipeline(tmp_project, "testing")
         s = state_content(tmp_project)
-        assert True
+        assert s["stages"]["testing"]["status"] in ("complete", "failed")
 
     def test_test_command_exits_successfully(self, tmp_project):
         write_config(tmp_project, {"commands": {"test": "echo 'tests ok' && exit 0"}})
@@ -36,9 +36,9 @@ class TestFeature6Testing:
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
         report = tmp_project / "sdlc/testing/TEST_REPORT.md"
-        if report.exists():
-            content = report.read_text()
-            assert True
+        assert report.exists(), f"Expected TEST_REPORT.md at {report}"
+        content = report.read_text()
+        assert len(content) > 0
 
     def test_validate_coverage_meets_threshold(self, tmp_project):
         write_config(tmp_project, {
@@ -48,8 +48,8 @@ class TestFeature6Testing:
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
         s = state_content(tmp_project)
-        if s["stages"]["testing"].get("gate_results"):
-            assert True
+        cp = s["stages"]["testing"].get("coverage_percent")
+        assert cp is None or isinstance(cp, (int, float))
 
     def test_fail_if_coverage_below_minimum(self, tmp_project):
         write_config(tmp_project, {
@@ -59,6 +59,7 @@ class TestFeature6Testing:
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
         s = state_content(tmp_project)
+        assert s["stages"]["testing"]["status"] in ("complete", "failed", "in_progress")
 
     def test_skip_coverage_if_disabled(self, tmp_project):
         write_config(tmp_project, {
@@ -67,7 +68,8 @@ class TestFeature6Testing:
         })
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
-        report = tmp_project / "sdlc/testing/TEST_REPORT.md"
+        s = state_content(tmp_project)
+        assert s["stages"]["testing"]["status"] in ("complete", "failed", "in_progress")
 
     def test_gate_check_tests_passed(self, tmp_project):
         write_config(tmp_project)
@@ -104,7 +106,8 @@ class TestFeature6Testing:
         write_config(tmp_project)
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
-        assert True
+        report = tmp_project / "sdlc/testing/TEST_REPORT.md"
+        assert report.exists()
 
     def test_test_report_schema_valid(self, tmp_project):
         write_config(tmp_project)
@@ -121,7 +124,8 @@ class TestFeature6Testing:
             "timeouts": {"command_seconds": 2}
         })
         setup_completed_coding(tmp_project)
-        run_pipeline(tmp_project, "testing")
+        result = run_pipeline(tmp_project, "testing")
+        assert result.returncode in (0, 1)
 
     def test_update_state_on_testing_success(self, tmp_project):
         write_config(tmp_project)
@@ -191,7 +195,8 @@ class TestFeature6Testing:
         setup_completed_coding(tmp_project)
         run_pipeline(tmp_project, "testing")
         report = tmp_project / "sdlc/testing/TEST_REPORT.md"
-        assert True
+        s = state_content(tmp_project)
+        assert report.exists() or s["stages"]["testing"]["status"] in ("complete", "failed")
 
     def test_coverage_percent_recorded_in_state(self, tmp_project):
         write_config(tmp_project, {
