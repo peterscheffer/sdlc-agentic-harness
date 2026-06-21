@@ -45,7 +45,7 @@ pip install langchain-openai pydantic
    ```
    LANGSMITH_TRACING=true
    LANGSMITH_API_KEY=lsv2_pt_...
-   LANGSMITH_PROJECT=mom-sdlc
+   LANGSMITH_PROJECT=sdlc-agentic-harness
    ```
    Each LLM call is traced with `stage`, `pipeline_id`, and `iteration` metadata for filtering in the LangSmith UI.
 6. Optionally copy `.opencode/commands/sdlc.md` for `/sdlc` slash command support

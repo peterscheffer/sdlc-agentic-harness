@@ -2,7 +2,7 @@
 
 ## Project
 
-name: MoM  
+name: SDLC Agentic Harness  
 language: Python framework: none
 
 ## Architecture Rules

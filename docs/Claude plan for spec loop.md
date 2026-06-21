@@ -1,26 +1,26 @@
-# Plan: Applying 3-Layer Spec Framework to MoM
+# Plan: Applying 3-Layer Spec Framework to SDLC Agentic Harness
 
 ## Context
 
-**What:** Evaluate whether MoM can adopt a "spec-as-source-of-truth" architecture where:
+**What:** Evaluate whether SDLC Agentic Harness can adopt a "spec-as-source-of-truth" architecture where:
 - Layer 1 (Domain/Intent) = business logic in readable form (Gherkin, decision tables)
 - Layer 2 (Contract/Topology) = formalized interfaces (OpenAPI, JSON Schema, state machines)  
 - Layer 3 (Reality/Mechanics) = implementation constraints and deviations (discovered during build, formalized back into specs)
 - Code treated as regenerable artifacts, not the source of truth
 
-**Why:** The current MoM pipeline is strong on orchestration but weak on:
+**Why:** The current SDLC Agentic Harness pipeline is strong on orchestration but weak on:
 1. Formal contracts (Layer 2 doesn't exist; ARCH.md is narrative)
 2. Deterministic verification (all checks are LLM self-grading, not rule-driven)
 3. Spec-code bidirectionality (test failures and code drift don't flow back into specs)
 4. Implementation drift detection (no automated reconciliation of actual vs. specified)
 
-**Goal:** Determine whether extending MoM's current architecture is feasible, or if portions need fundamental redesign.
+**Goal:** Determine whether extending SDLC Agentic Harness's current architecture is feasible, or if portions need fundamental redesign.
 
 ---
 
-## Assessment: Fit Analysis (Can MoM Be Extended?)
+## Assessment: Fit Analysis (Can SDLC Agentic Harness Be Extended?)
 
-### ✓ What MoM Already Has (60% Fit)
+### ✓ What SDLC Agentic Harness Already Has (60% Fit)
 
 **Orchestration backbone:**
 - Stateful state machine with sequence enforcement (planning → ui-design → architecture → requirements → coding → testing → review → pr)
@@ -87,7 +87,7 @@
 
 ### Verdict: **Extension + Partial Refactor of Verification**
 
-MoM's orchestration and Layer 1 generation are solid. The framework can be extended by:
+SDLC Agentic Harness's orchestration and Layer 1 generation are solid. The framework can be extended by:
 
 1. **Add Layer 2 (Contract) generation** — new stages or sub-steps in existing stages
 2. **Replace LLM-based verification with deterministic checks** — significant refactor of `review.py` and `testing.py`
@@ -360,7 +360,7 @@ MoM's orchestration and Layer 1 generation are solid. The framework can be exten
 - Verify test failures generate Layer 3 entries
 
 ### Spot-Checks:
-- Run on MoM itself (dogfooding): does MoM's orchestration code match its own ARCH.md spec?
+- Run on SDLC Agentic Harness itself (dogfooding): does SDLC Agentic Harness's orchestration code match its own ARCH.md spec?
 - Generate DEVIATIONS.md for actual drift (e.g., "PR routing added a new gate check not in ARCH.md")
 - Manually review `/truth` output for sensibility
 
@@ -377,9 +377,9 @@ MoM's orchestration and Layer 1 generation are solid. The framework can be exten
    - Separate `.sdlc_state.json` approval queue?
    - Slack/email + manual git commit?
 
-3. **Scope:** Does this apply only to MoM's own development, or is the goal to make MoM a tool that **enforces** this pattern for user projects?
-   - Self-application: MoM becomes a spec-driven orchestrator for itself
-   - User-facing: MoM helps developers apply this to their own projects (bigger scope)
+3. **Scope:** Does this apply only to SDLC Agentic Harness's own development, or is the goal to make SDLC Agentic Harness a tool that **enforces** this pattern for user projects?
+   - Self-application: SDLC Agentic Harness becomes a spec-driven orchestrator for itself
+   - User-facing: SDLC Agentic Harness helps developers apply this to their own projects (bigger scope)
 
 4. **Edge Cases:** How adversarial should `/edge` be?
    - Lightweight: check spec against common risks (security, scale, compliance)
