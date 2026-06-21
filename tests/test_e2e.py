@@ -30,6 +30,7 @@ class TestFeature12EndToEnd:
         write_config(tmp_project)
         write_artefact(tmp_project, "sdlc/planning/PRD.md", PRD_WITHOUT_UI)
         run_pipeline(tmp_project, "planning", "backend feature")
+        run_pipeline(tmp_project, "ui-design")
         run_pipeline(tmp_project, "architecture")
         s = state_content(tmp_project)
         assert s["stages"]["ui-design"]["status"] in ("skipped", "complete")

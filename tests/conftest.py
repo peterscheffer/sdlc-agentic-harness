@@ -183,6 +183,32 @@ def mock_llm_env(monkeypatch):
 def tmp_project(tmp_path, mock_llm_env):
     project = tmp_path / "project"
     project.mkdir()
+
+    # Create required template directory and files
+    templates_dir = project / "sdlc" / "templates"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    (templates_dir / "PRD.md").write_text("""# Product Requirements Document
+## [PROJECT_NAME] — [One-line project descriptor]
+
+## Summary
+[Project summary]
+
+## Goals
+- [Goal 1]
+
+## Non-Goals
+- [Non-Goal 1]
+
+## Tasks
+- [ ] Task 1
+
+## Acceptance Criteria
+- [Criterion 1]
+
+## Affected Files
+TBD
+""")
+
     yield project
 
 
