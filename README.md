@@ -8,7 +8,7 @@ with no stage advancing until its hard completion criteria are satisfied.
 It's built for solo developers who want disciplined, repeatable, AI-assisted
 development instead of ad-hoc prompting.
 
-## Capbailities
+## Capabilities
 Read about this harness's capablities in the [Documentation](https://peterscheffer.github.io/sdlc-agentic-harness/index.html)
 
 ## The pipeline
