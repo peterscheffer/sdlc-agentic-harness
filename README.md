@@ -44,11 +44,16 @@ This repo provides a collection of useful `.claude/commands` (custom slash comma
 
 ### Recommended: Add to your existing project
 
-Copy the `.claude` folder into your project's root directory:
+Clone the necessary files into your project's root directory:
 
 ```bash
 git clone --depth 1 https://github.com/peterscheffer/sdlc-agentic-harness.git /tmp/sdlc-harness
-cp -r /tmp/sdlc-harness/ .
+cp -r /tmp/sdlc-harness/.claude .
+cp -r /tmp/sdlc-harness/.opencode .
+cp -r /tmp/sdlc-harness/.scripts .
+cp -r /tmp/sdlc-harness/.env.example .
+cp -r /tmp/sdlc-harness/.gitignore .
+cp -r /tmp/sdlc-harness/sdlc.config.json .
 rm -rf /tmp/sdlc-harness
 ```
 
