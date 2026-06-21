@@ -55,6 +55,12 @@ Configure provider/model and your project's test/lint/build commands in
 
 ## Usage
 
+Use it inside Claude or Opencode:
+
+```bash
+/plan
+```
+
 Run a single stage:
 
 ```bash
