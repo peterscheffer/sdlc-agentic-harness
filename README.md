@@ -10,6 +10,17 @@ development instead of ad-hoc prompting.
 
 ## Capabilities
 Read about this harness's capablities in the [Documentation](https://peterscheffer.github.io/sdlc-agentic-harness/index.html)
+[SDLC Stages](https://peterscheffer.github.io/sdlc-agentic-harness/stages.html)  
+[Gate Verification](https://peterscheffer.github.io/sdlc-agentic-harness/gates.html)  
+[Verification Methods](https://peterscheffer.github.io/sdlc-agentic-harness/verification.html)  
+[Coding Loop](https://peterscheffer.github.io/sdlc-agentic-harness/coding-loop.html)  
+[LLM Logging](https://peterscheffer.github.io/sdlc-agentic-harness/logging.html)  
+[State Persistence](https://peterscheffer.github.io/sdlc-agentic-harness/state.html)  
+[PRINCIPLES.md](https://peterscheffer.github.io/sdlc-agentic-harness/principles.html)  
+[Gherkin Specs](https://peterscheffer.github.io/sdlc-agentic-harness/gherkin.html)  
+[Review & PR](https://peterscheffer.github.io/sdlc-agentic-harness/review-pr.html)  
+[CLI Reference](https://peterscheffer.github.io/sdlc-agentic-harness/cli.html)  
+[Configuration](https://peterscheffer.github.io/sdlc-agentic-harness/config.html)
 
 ## The pipeline
 
