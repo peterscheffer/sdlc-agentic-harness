@@ -38,20 +38,25 @@ completion criteria pass.
 - An OpenAI-compatible LLM endpoint — local [Ollama](https://ollama.com),
   [OpenRouter](https://openrouter.ai), or OpenAI
 
-## Install
+## Installation
+
+This repo provides a collection of useful `.claude/commands` (custom slash commands) and related files for **Claude Code** (and compatible tools like **OpenCode**).
+
+### Recommended: Add to your existing project
+
+Copy the `.claude` folder into your project's root directory:
 
 ```bash
-git clone https://github.com/peterscheffer/sdlc-agentic-harness.git
-cd sdlc-agentic-harness
-
-pip install langchain-openai pydantic python-dotenv
-
-cp .env.example .env   # then fill in your own values
+git clone --depth 1 https://github.com/peterscheffer/sdlc-agentic-harness.git /tmp/sdlc-harness
+cp -r /tmp/sdlc-harness/ .
+rm -rf /tmp/sdlc-harness
 ```
 
-Configure provider/model and your project's test/lint/build commands in
-[`sdlc.config.json`](sdlc.config.json). Full setup notes are in
-[docs/installation.md](docs/installation.md).
+Then start Claude Code or OpenCode from your project folder:
+
+```bash
+claude   # or: opencode
+```
 
 ## Usage
 
