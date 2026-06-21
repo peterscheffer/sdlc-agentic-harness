@@ -105,7 +105,7 @@ patterns = [
 <p>For testing without real LLM calls, set the <code>SDLC_USE_MOCK_LLM</code> environment variable:</p>
 
 <pre>export SDLC_USE_MOCK_LLM=1
-python3 .scripts/langgraph_sdlc.py --stage planning --feature "add auth"</pre>
+python3 .scripts/sdlc_harness.py --stage planning --feature "add auth"</pre>
 
 <p>This returns deterministic mock responses for every stage, logs them with a <code>(mock)</code> indicator, and enables full pipeline testing without any LLM dependency. The test suite uses this mode exclusively.</p>
 

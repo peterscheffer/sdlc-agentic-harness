@@ -45,7 +45,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using yo
    ```
 3. Execute the LangGraph pipeline execution script for the testing stage:
    ```bash
-   python3 .scripts/langgraph_sdlc.py --stage testing --context "$CONTEXT_FILE"
+   python3 .scripts/sdlc_harness.py --stage testing --context "$CONTEXT_FILE"
    ```
 
 ## Phase 4. Output Synthesis & Handover

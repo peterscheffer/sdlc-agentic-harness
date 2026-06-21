@@ -40,7 +40,7 @@ Copy these files into a new project to bring the LangGraph SDLC pipeline with yo
 
 | Path | Purpose |
 |------|---------|
-| `.scripts/` | The entire directory — `langgraph_sdlc.py` + `utils/`, `nodes/`, `gates/` |
+| `.scripts/` | The entire directory — `sdlc_harness.py` + `utils/`, `nodes/`, `gates/` |
 | `sdlc.config.json` | Pipeline configuration (models, commands, timeouts) |
 
 ## Required — Dependencies

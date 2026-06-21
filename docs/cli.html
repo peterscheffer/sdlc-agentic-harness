@@ -54,7 +54,7 @@ tr:nth-child(even) { background: #fafafa; }
 <h2>CLI Command Reference</h2>
 
 <p>
-The harness is invoked via <code>python3 .scripts/langgraph_sdlc.py</code> from the project root. It supports stage execution, pipeline management, and autopilot mode.
+The harness is invoked via <code>python3 .scripts/sdlc_harness.py</code> from the project root. It supports stage execution, pipeline management, and autopilot mode.
 </p>
 
 <h3>Stage Execution</h3>
@@ -75,7 +75,7 @@ The harness is invoked via <code>python3 .scripts/langgraph_sdlc.py</code> from 
 
 <p>The <code>--autopilot</code> (or <code>-a</code>) flag enables fully automatic pipeline execution. After the requested stage completes successfully, the harness runs all remaining stages without further intervention:</p>
 
-<pre>python3 .scripts/langgraph_sdlc.py --stage planning --feature "add auth" --autopilot</pre>
+<pre>python3 .scripts/sdlc_harness.py --stage planning --feature "add auth" --autopilot</pre>
 
 <p>The autopilot loop runs each stage sequentially, checks for failures, updates the PRD after each stage, and generates metrics. If any stage fails (or the review recommends FAIL), the autopilot halts and reports the issue.</p>
 
@@ -83,31 +83,31 @@ The harness is invoked via <code>python3 .scripts/langgraph_sdlc.py</code> from 
 
 <p>The <code>--context</code> flag allows injecting prior conversation context from a file. This context is included in the LLM system prompt and takes precedence over conflicting information in existing artefacts:</p>
 
-<pre>python3 .scripts/langgraph_sdlc.py --stage architecture --context /tmp/discussion.txt</pre>
+<pre>python3 .scripts/sdlc_harness.py --stage architecture --context /tmp/discussion.txt</pre>
 
 <p>This is the mechanism that preserves developer decisions across terminal sessions — the OpenCode chat exports the conversation to a file, which is then injected into the pipeline stage.</p>
 
 <h3>Usage Examples</h3>
 
 <pre># Start a new pipeline
-python3 .scripts/langgraph_sdlc.py --stage planning \
+python3 .scripts/sdlc_harness.py --stage planning \
   --feature "Add user authentication with JWT tokens"
 
 # Run architecture stage with prior discussion context
-python3 .scripts/langgraph_sdlc.py --stage architecture \
+python3 .scripts/sdlc_harness.py --stage architecture \
   --context /tmp/arch-discussion.txt
 
 # Run testing and then automatically continue through PR
-python3 .scripts/langgraph_sdlc.py --stage testing --autopilot
+python3 .scripts/sdlc_harness.py --stage testing --autopilot
 
 # Force PR submission despite FAIL recommendation
-python3 .scripts/langgraph_sdlc.py --stage pr --force
+python3 .scripts/sdlc_harness.py --stage pr --force
 
 # Check pipeline status
-python3 .scripts/langgraph_sdlc.py status
+python3 .scripts/sdlc_harness.py status
 
 # Reset pipeline state
-python3 .scripts/langgraph_sdlc.py reset --force</pre>
+python3 .scripts/sdlc_harness.py reset --force</pre>
 
 <h3>See Also</h3>
 <ul>

@@ -15,7 +15,7 @@ def pytest_configure(config):
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = PROJECT_ROOT / ".scripts"
-PIPELINE_SCRIPT = SCRIPTS_DIR / "langgraph_sdlc.py"
+PIPELINE_SCRIPT = SCRIPTS_DIR / "sdlc_harness.py"
 
 BASE_CONFIG = {
     "$schema": "sdlc-config/v1",

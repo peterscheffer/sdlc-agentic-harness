@@ -39,7 +39,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using yo
    ```
 3. Execute the LangGraph pipeline execution script for the requirements stage:
    ```bash
-   python3 .scripts/langgraph_sdlc.py --stage requirements --context "$CONTEXT_FILE"
+   python3 .scripts/sdlc_harness.py --stage requirements --context "$CONTEXT_FILE"
    ```
 
 ## Phase 4. Output Synthesis & Handover
@@ -59,7 +59,7 @@ After the requirements stage completes successfully, ask the user if they would 
    a. Inform them the pipeline will now run autonomously through all remaining stages.
    b. Execute:
       ```bash
-      python3 .scripts/langgraph_sdlc.py --stage coding --context "$CONTEXT_FILE" --autopilot
+      python3 .scripts/sdlc_harness.py --stage coding --context "$CONTEXT_FILE" --autopilot
       ```
    c. Monitor the output as each stage (coding, testing, review, pr) runs. If any stage fails, the pipeline will halt and you should report the failure to the user.
    d. After the auto-pilot completes (success or failure), summarize the overall result:

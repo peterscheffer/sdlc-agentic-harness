@@ -28,7 +28,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using th
    ```
 3. Execute the LangGraph pipeline execution script for the planning stage:
    ```bash
-   python3 .scripts/langgraph_sdlc.py --stage planning --context "$CONTEXT_FILE"
+   python3 .scripts/sdlc_harness.py --stage planning --context "$CONTEXT_FILE"
    ```
 
 ## Phase 4. Output Synthesis & Handover

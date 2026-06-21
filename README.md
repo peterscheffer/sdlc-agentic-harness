@@ -44,20 +44,20 @@ Configure provider/model and your project's test/lint/build commands in
 Run a single stage:
 
 ```bash
-python3 .scripts/langgraph_sdlc.py --stage planning --feature "Add CSV export to the reports page"
+python3 .scripts/sdlc_harness.py --stage planning --feature "Add CSV export to the reports page"
 ```
 
 Run a stage and then auto-run all remaining stages:
 
 ```bash
-python3 .scripts/langgraph_sdlc.py --stage planning --feature "..." --autopilot
+python3 .scripts/sdlc_harness.py --stage planning --feature "..." --autopilot
 ```
 
 Inspect or reset pipeline state:
 
 ```bash
-python3 .scripts/langgraph_sdlc.py status
-python3 .scripts/langgraph_sdlc.py reset [--force]
+python3 .scripts/sdlc_harness.py status
+python3 .scripts/sdlc_harness.py reset [--force]
 ```
 
 | Flag | Purpose |
@@ -88,7 +88,7 @@ LangSmith tracing is optional; when enabled, each LLM call is traced with
 
 ```
 .scripts/
-  langgraph_sdlc.py     # CLI entry point + orchestration
+  sdlc_harness.py       # CLI entry point + orchestration
   nodes/                # per-stage logic (planning, architecture, coding, ...)
   gates/                # gate runner + PRINCIPLES enforcement
   utils/                # state, config, git, llm, validators
