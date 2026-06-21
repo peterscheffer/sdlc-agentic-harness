@@ -133,7 +133,7 @@ Tests run without real API calls via a mock LLM (`SDLC_USE_MOCK_LLM=1`).
 - [docs/installation.md](docs/installation.md) — setup and configuration
 - [docs/PRINCIPLES.md](docs/PRINCIPLES.md) — architecture tempplate for rule enforcement
 - [sdlc/templates/PRD.md](sdlc/templates/PRD.md) — PRD template 
-- [capabilities](docs/) — capability reference (HTML)
+- [capabilities](https://peterscheffer.github.io/sdlc-agentic-harness/) — capability reference (HTML)
 
 ## Contributing
 
