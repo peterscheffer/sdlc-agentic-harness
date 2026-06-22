@@ -75,7 +75,7 @@ Use slash commands inside Claude or Opencode, starting with:
 /plan
 ```
 
-Alternatively, you can run a single stagevia the CLI:
+Alternatively, you can run a single stage via the CLI:
 
 ```bash
 python3 .scripts/sdlc_harness.py --stage planning --feature "Add CSV export to the reports page"
