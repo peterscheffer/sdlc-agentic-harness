@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from datetime import datetime, timezone
 from typing import Optional
@@ -184,6 +185,9 @@ def _mock_llm_call(prompt: str, stage: str, iteration: Optional[int] = None) -> 
         return "NO_UPDATE"
     if stage == "planning":
         return _generate_mock_prd(prompt)
+    elif stage == "planning-classify":
+        return ("CLASSIFICATION: mixed | PROFILES: gherkin-bdd, unit-tests | "
+                "RATIONALE: Mock classification for testing.")
     elif stage == "ui-design":
         return _generate_mock_design()
     elif stage == "architecture":
@@ -273,6 +277,24 @@ def _generate_mock_requirements() -> str:
         "    When they enter valid credentials\n"
         "    Then they are redirected to the dashboard\n"
         "```\n"
+        "```test-cases-md\n"
+        "# Test Cases\n\n"
+        "| ID | Description | Test File | Priority |\n"
+        "|----|-------------|-----------|----------|\n"
+        "| TC-1 | Valid login succeeds | tests/test_auth.py | High |\n"
+        "```\n"
+        "```openapi-yaml\n"
+        "openapi: 3.0.3\n"
+        "info:\n"
+        "  title: Mock API\n"
+        "  version: 1.0.0\n"
+        "paths:\n"
+        "  /login:\n"
+        "    post:\n"
+        "      responses:\n"
+        "        '200':\n"
+        "          description: OK\n"
+        "```\n"
     )
 
 
@@ -300,17 +322,30 @@ None identified.
 
 
 def _generate_mock_code(prompt: str, iteration: Optional[int] = None) -> str:
-    if iteration and iteration > 1:
-        return (
-            "# Fixed code after iteration feedback\n"
-            "def hello():\n"
-            '    return "Hello, World!"\n'
-        )
-    return (
-        "# Generated code\n"
-        "def hello():\n"
+    body = (
         '    return "Hello, World!"\n'
     )
+    comment = "# Fixed code after iteration feedback" if iteration and iteration > 1 else "# Generated code"
+
+    target_files = _extract_target_files_from_prompt(prompt)
+    if not target_files:
+        return f"{comment}\ndef hello():\n{body}"
+
+    # Emit a properly headered block per target file, matching the coding
+    # stage's system-prompt contract, so multi-file scenarios (e.g. spec
+    # profile scaffolds) resolve unambiguously instead of relying on a
+    # single-file fallback.
+    parts = []
+    for tf in target_files:
+        parts.append(f"### {tf}\n```\n{comment}\ndef hello():\n{body}```")
+    return "\n\n".join(parts)
+
+
+def _extract_target_files_from_prompt(prompt: str) -> list[str]:
+    match = re.search(r'^Target files:\s*(.+)$', prompt, re.MULTILINE)
+    if not match or match.group(1).strip() == "TBD":
+        return []
+    return [f.strip() for f in match.group(1).split(",") if f.strip()]
 
 
 def _generate_mock_review() -> str:

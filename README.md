@@ -32,6 +32,61 @@ Each stage is driven by an LLM, validated by a gate, and persisted to state so a
 run can be resumed or inspected at any point. Stages only advance when their
 completion criteria pass.
 
+## Spec profiles: deterministic verification
+
+Features are specified through pluggable **spec profiles** — each pairs a spec
+format with a deterministic, exit-code-based verifier. The planning stage
+classifies the solution (ui / api / service / integration / data / mixed) and
+recommends profiles; the requirements Q&A confirms them with you (or adopts the
+recommendation automatically in auto-accept mode). A feature can combine
+multiple profiles, and **all selected verifiers must exit 0** for the testing
+gate to pass. LLM judgment is used only where determinism is impossible
+(PRINCIPLES compliance, review recommendation).
+
+| Profile | Spec artifact | Verifier (Python / Java / JS·TS) |
+|---------|---------------|----------------------------------|
+| `gherkin-bdd` | `sdlc/requirements/*.feature` | behave / cucumber-jvm (`mvn test`, `gradle test`) / @cucumber/cucumber |
+| `unit-tests` | `sdlc/requirements/TEST_CASES.md` | pytest / JUnit / jest or vitest |
+| `openapi-contract` | `sdlc/requirements/openapi.yaml` | schemathesis against the running service |
+
+The coding stage generates step definitions and test skeletons as first-class
+targets and runs each verifier inside its iteration loop, so runner failures
+feed back into the next iteration. Runners are auto-detected from the project
+(`pyproject.toml`, `pom.xml`, `build.gradle`, `package.json`, `tsconfig.json`)
+and overridable per profile in `sdlc.config.json`:
+
+```json
+"default_profiles": ["gherkin-bdd"],
+"profiles": {
+  "gherkin-bdd": { "runner": "behave" },
+  "unit-tests": { "tests_dir": "tests" },
+  "openapi-contract": {
+    "server_command": "uvicorn app:app --port 8000",
+    "base_url": "http://127.0.0.1:8000",
+    "health_path": "/health"
+  }
+}
+```
+
+> **Breaking change:** the `gherkin-bdd` profile now requires a real BDD runner
+> (it previously used an LLM compliance check). If the runner is not installed,
+> the coding stage fails fast at preflight with the exact install command —
+> there is no silent LLM fallback.
+
+## Dark factory mode
+
+`--auto-accept` runs the entire pipeline unattended: the skills skip
+interactive Q&A (answering with best-practice defaults), planning auto-adopts
+the recommended spec profiles, and every gate is verified deterministically
+from planning through PR submission:
+
+```bash
+python3 .scripts/sdlc_harness.py --stage planning --feature "add a /health endpoint" --auto-accept
+```
+
+Interactive mode is unchanged — run the slash commands stage by stage and give
+feedback at each Q&A gate.
+
 ## Requirements
 
 - Python 3.11+
@@ -93,6 +148,8 @@ python3 .scripts/sdlc_harness.py --stage coding --feature "..." --autopilot
 | `--feature`, `--intent` | The intent / feature description (used by planning) |
 | `--context <file>` | Path to a file containing prior conversation context |
 | `--autopilot`, `-a` | After the requested stage succeeds, run all remaining stages |
+| `--auto-accept` | Dark-factory mode: implies `--autopilot`; skills skip interactive Q&A and profile recommendations are auto-adopted |
+| `--profiles <list>` | Comma-separated spec profiles override (`gherkin-bdd`, `unit-tests`, `openapi-contract`) |
 | `--force` | Skip confirmation (reset) or force PR submission |
 
 ### OpenCode slash commands

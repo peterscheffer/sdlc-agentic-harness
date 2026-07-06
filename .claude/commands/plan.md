@@ -2,6 +2,21 @@
 description: Assist user in proceeding through planning stage of the SDLC pipeline.
 ---
 
+## Phase 0.0: Auto-Accept Detection (Dark Factory Mode)
+Before any interactive phase, determine whether this run is in auto-accept mode:
+1. Run:
+   ```bash
+   python3 -c "import json,os;print(json.load(open('.sdlc_state.json')).get('auto_accept',False) if os.path.exists('.sdlc_state.json') else False)"
+   ```
+2. Auto-accept is active if that prints `True`, OR the user's invocation includes `--auto-accept`.
+3. If auto-accept is active: **SKIP every interactive questioning phase in this skill.** Answer each discovery question yourself using best-practice defaults inferred from the user's intent and the repository. Record every decision you made in the context file under a heading `## Auto-Accepted Decisions`. Then proceed directly to the context-export and script-execution phase. Do not ask the user anything.
+4. Dark-factory invocation: if the user runs `/plan "<intent>" --auto-accept`, export a minimal context file containing the intent and your auto-accepted decisions, then execute:
+   ```bash
+   python3 .scripts/sdlc_harness.py --stage planning --feature "<intent>" --context "$CONTEXT_FILE" --auto-accept
+   ```
+   This runs the ENTIRE pipeline (planning → ui-design → architecture → requirements → coding → testing → review → pr) unattended: the planning stage classifies the solution, auto-selects spec profiles, and every downstream gate is verified deterministically. Monitor the output and report the final result (PR URL, or the stage where the pipeline halted and why).
+
+
 ## Phase 1: High-Level Discovery (Dynamic Questioning)
 Your first objective is to interview the user to gather high-level information about the purpose of the software product they want to build. 
 
@@ -28,7 +43,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using th
    ```
 3. Execute the LangGraph pipeline execution script for the planning stage:
    ```bash
-   python3 .scripts/langgraph_sdlc.py --stage planning --context "$CONTEXT_FILE"
+   python3 .scripts/sdlc_harness.py --stage planning --context "$CONTEXT_FILE"
    ```
 
 ## Phase 4. Output Synthesis & Handover

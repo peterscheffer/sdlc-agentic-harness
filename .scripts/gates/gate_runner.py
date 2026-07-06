@@ -71,7 +71,7 @@ def check_all_files_exist(file_list: list[str]) -> tuple[bool, str]:
     return False, f"Missing files: {', '.join(missing)}"
 
 
-def check_command_exits_ok(command: str, timeout: int = 300) -> tuple[bool, str]:
+def check_command_exits_ok(command: str, timeout: int = 300, detail_chars: int = 200) -> tuple[bool, str]:
     if not command or command.strip() == "":
         return False, "Command not configured in sdlc.config.json"
     try:
@@ -80,7 +80,7 @@ def check_command_exits_ok(command: str, timeout: int = 300) -> tuple[bool, str]
         )
         if result.returncode == 0:
             return True, f"Command exited with code 0"
-        detail = result.stderr[:200] if result.stderr else result.stdout[:200]
+        detail = result.stderr[-detail_chars:] if result.stderr else result.stdout[-detail_chars:]
         return False, f"Command exited with code {result.returncode}: {detail}"
     except subprocess.TimeoutExpired:
         return False, f"Command timed out after {timeout} seconds: {command}"

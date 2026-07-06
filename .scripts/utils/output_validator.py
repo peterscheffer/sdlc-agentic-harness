@@ -23,7 +23,8 @@ STAGE_SECTIONS = {
         "## Overview",
         "## Functional Requirements",
         "## Non-Functional Requirements",
-        "## Behavioural Requirements",
+        "## Acceptance Criteria",
+        "## Behavioural Requirements",  # legacy heading, still accepted
     ],
     "review": [
         "## Change Summary",

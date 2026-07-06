@@ -95,7 +95,7 @@ The harness enforces a sequential, gate-verified pipeline from intent parsing th
 <div class="stage">
 <h4>4: requirements</h4>
 <div class="meta"><span class="badge">Required</span> <span>Output: sdlc/requirements/REQUIREMENTS.md + .feature files</span></div>
-<p>Generates a structured requirements document with functional, non-functional, and behavioural requirements tables. Also produces Gherkin .feature files (one per feature area) that serve as executable specifications for the testing stage.</p>
+<p>Generates a structured requirements document (functional, non-functional, acceptance-criteria tables) plus one machine-verifiable spec artifact per selected spec profile: Gherkin .feature files (gherkin-bdd), enumerated test cases in TEST_CASES.md (unit-tests), and/or an OpenAPI document (openapi-contract). Profiles are recommended by the LLM from the planning-stage solution classification and confirmed by the user (or auto-adopted in auto-accept mode).</p>
 <p><strong>Gates:</strong> REQUIREMENTS.md exists, schema valid, at least one .feature file exists</p>
 </div>
 
@@ -109,8 +109,8 @@ The harness enforces a sequential, gate-verified pipeline from intent parsing th
 <div class="stage">
 <h4>6: testing</h4>
 <div class="meta"><span class="badge">Required</span> <span>Output: sdlc/testing/TEST_REPORT.md</span></div>
-<p>Executes the project's configured test command, captures output and exit code, parses coverage percentages, and writes a structured test report. Also runs an AI-based Gherkin compliance check to verify that all Gherkin scenarios are implemented in source code.</p>
-<p><strong>Gates:</strong> Tests pass, TEST_REPORT.md exists, report not empty, Gherkin compliance, optional coverage threshold</p>
+<p>Executes the project's configured test command, captures output and exit code, parses coverage percentages, and writes a structured test report. Then runs each selected spec profile's deterministic verifier (behave/cucumber-js/cucumber-jvm, pytest/jest/vitest/JUnit, schemathesis) and gates on the exit codes — all selected profiles must pass.</p>
+<p><strong>Gates:</strong> Tests pass, TEST_REPORT.md exists, report not empty, per-profile spec verification (exit code 0), optional coverage threshold</p>
 </div>
 
 <div class="stage">

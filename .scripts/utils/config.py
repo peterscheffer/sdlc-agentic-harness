@@ -36,6 +36,17 @@ class TimeoutsConfig(BaseModel):
     command_seconds: int = 300
 
 
+class ProfileConfig(BaseModel):
+    runner: Optional[str] = None          # e.g. behave | cucumber-js | cucumber-jvm | pytest | jest | vitest | junit | schemathesis
+    command: Optional[str] = None         # full override of the verifier command
+    steps_dir: Optional[str] = None       # gherkin-bdd: where step definitions live
+    tests_dir: Optional[str] = None       # unit-tests: where spec-derived tests live
+    spec_path: Optional[str] = None       # openapi-contract: path to the OpenAPI document
+    server_command: Optional[str] = None  # openapi-contract: how to start the service
+    base_url: Optional[str] = None        # openapi-contract: where the service listens
+    health_path: Optional[str] = None     # openapi-contract: readiness endpoint
+
+
 class SDLCConfig(BaseModel):
     default_model: str
     provider: Optional[str] = None
@@ -44,6 +55,8 @@ class SDLCConfig(BaseModel):
     coverage: CoverageConfig = CoverageConfig()
     github: GithubConfig = GithubConfig()
     timeouts: TimeoutsConfig = TimeoutsConfig()
+    default_profiles: list[str] = ["gherkin-bdd"]
+    profiles: dict[str, ProfileConfig] = {}
 
 
 def load_config() -> SDLCConfig:

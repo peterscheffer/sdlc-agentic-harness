@@ -3,7 +3,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 STATE_FILE = ".sdlc_state.json"
 
@@ -26,6 +26,10 @@ STAGE_ORDER = {
 
 
 class GateResults(BaseModel):
+    # Profiles contribute dynamically named gates (e.g. profile_gherkin_bdd_verified),
+    # so unknown fields must be accepted and persisted.
+    model_config = ConfigDict(extra="allow")
+
     prd_exists: Optional[bool] = None
     prd_schema_valid: Optional[bool] = None
     tasks_defined: Optional[bool] = None
@@ -74,6 +78,13 @@ class SDLCPersistedState(BaseModel):
         s: StageEntry() for s in VALID_STAGES
     })
     pr_url: Optional[str] = None
+    # Spec profiles selected for this pipeline; empty means "unset" and resolves
+    # via config.default_profiles (legacy fallback: gherkin-bdd).
+    spec_profiles: list[str] = []
+    # {"type": "api|ui|service|integration|data|mixed", "language": "...",
+    #  "recommended_profiles": [...], "rationale": "..."}
+    solution_classification: Optional[dict] = None
+    auto_accept: bool = False
 
 
 def load_state() -> SDLCPersistedState:

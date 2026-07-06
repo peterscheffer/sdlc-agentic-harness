@@ -130,12 +130,22 @@ def _run_autopilot(state, config, conversation_context):
         if not expected or expected[0] == "complete":
             break
         next_stage = expected[0]
+        # ui-design may legitimately end "skipped" (non-UI feature); it never joins
+        # completed_stages, so advance past it rather than re-running it forever.
+        if next_stage == "ui-design" and state.stages["ui-design"].status in ("skipped", "complete"):
+            next_stage = "architecture"
 
         print(f"\n{'='*50}")
         print(f"[autopilot] Running stage: {next_stage}")
         print(f"{'='*50}")
 
-        if next_stage == "coding":
+        if next_stage == "ui-design":
+            state = execute_ui_design(state, config, conversation_context=conversation_context)
+        elif next_stage == "architecture":
+            state = execute_architecture(state, config, conversation_context=conversation_context)
+        elif next_stage == "requirements":
+            state = execute_requirements(state, config, conversation_context=conversation_context)
+        elif next_stage == "coding":
             state = execute_coding(state, config, conversation_context=conversation_context)
         elif next_stage == "testing":
             state = execute_testing(state, config)
@@ -157,7 +167,7 @@ def _run_autopilot(state, config, conversation_context):
         _prd_update(state, config, next_stage, conversation_context)
         _print_metrics(state, next_stage)
 
-        if state.stages[next_stage].status != "complete":
+        if state.stages[next_stage].status not in ("complete", "skipped"):
             print(f"\n[autopilot] \u2717 Stage '{next_stage}' FAILED.")
             print(f"[autopilot] Pipeline halted. Fix the issue and continue manually.")
             print(f"[autopilot] Run '/sdlc status' to see the current state.")
@@ -171,7 +181,8 @@ def _run_autopilot(state, config, conversation_context):
     return state
 
 
-def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversation_context: str = "", autopilot: bool = False):
+def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversation_context: str = "",
+                  autopilot: bool = False, auto_accept: bool = False, profiles: list[str] | None = None):
     try:
         config = load_config()
     except (FileNotFoundError, ValueError) as e:
@@ -184,6 +195,17 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         print(f"Error: {e}")
         sys.exit(1)
 
+    if auto_accept:
+        autopilot = True
+        state.auto_accept = True
+    if profiles:
+        from profiles import validate_profile_names
+        error = validate_profile_names(profiles)
+        if error:
+            print(error)
+            sys.exit(1)
+        state.spec_profiles = profiles
+
     if state.current_stage == "INIT" and stage_id != "planning":
         print("No pipeline in progress. Start with: /sdlc planning '<intent>'")
         sys.exit(1)
@@ -191,9 +213,15 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
     # --- Cross-stage workflow: re-enter planning with new intent ---
     if stage_id == "planning" and state.current_stage != "INIT" and intent:
         state = init_state(intent, get_current_branch())
+        state.auto_accept = auto_accept
+        if profiles:
+            state.spec_profiles = profiles
         state = execute_planning(state, config, intent, conversation_context=conversation_context)
         save_state(state)
         _print_metrics(state, stage_id)
+        if autopilot and state.stages["planning"].status == "complete":
+            state = _run_autopilot(state, config, conversation_context)
+            save_state(state)
         return 0
 
     # --- Cross-stage workflow: re-enter coding from review ---
@@ -224,6 +252,9 @@ def execute_stage(stage_id: str, intent: str = "", force: bool = False, conversa
         if state.current_stage == "INIT":
             state = init_state(intent, branch)
             state.current_stage = "INIT"
+            state.auto_accept = auto_accept
+            if profiles:
+                state.spec_profiles = profiles
         state = execute_planning(state, config, intent, conversation_context=conversation_context)
 
     elif stage_id == "ui-design":
@@ -282,6 +313,12 @@ def _get_next_command(state) -> str:
     return "Run `/sdlc status`"
 
 
+def _parse_profiles_arg(raw: str | None) -> list[str] | None:
+    if not raw:
+        return None
+    return [p.strip() for p in raw.split(",") if p.strip()]
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="LangGraph-driven SDLC Pipeline - Orchestration Engine"
@@ -299,6 +336,12 @@ def main():
                         help="Path to a file containing prior conversation context.")
     parser.add_argument("--autopilot", "-a", action="store_true",
                         help="After the requested stage succeeds, automatically run all remaining stages.")
+    parser.add_argument("--auto-accept", action="store_true", dest="auto_accept",
+                        help="Dark-factory mode: implies --autopilot and records auto_accept in state so "
+                             "downstream stages and skills skip interactive confirmation.")
+    parser.add_argument("--profiles", required=False,
+                        help="Comma-separated spec profiles to use (e.g. gherkin-bdd,unit-tests,openapi-contract). "
+                             "Overrides state and config.")
 
     args, remaining = parser.parse_known_args()
 
@@ -319,14 +362,20 @@ def main():
             subparser.add_argument("--force", action="store_true")
             subparser.add_argument("--context", required=False)
             subparser.add_argument("--autopilot", action="store_true")
+            subparser.add_argument("--auto-accept", action="store_true", dest="auto_accept")
+            subparser.add_argument("--profiles", required=False)
             subargs, _ = subparser.parse_known_args(remaining[1:])
             ctx = _read_context_file(subargs.context or "")
             return execute_stage(subargs.stage, subargs.feature or "", subargs.force,
-                                 conversation_context=ctx, autopilot=subargs.autopilot)
+                                 conversation_context=ctx, autopilot=subargs.autopilot,
+                                 auto_accept=subargs.auto_accept,
+                                 profiles=_parse_profiles_arg(subargs.profiles))
 
     if args.stage:
         return execute_stage(args.stage, args.feature or "", args.force,
-                             conversation_context=conversation_context, autopilot=args.autopilot)
+                             conversation_context=conversation_context, autopilot=args.autopilot,
+                             auto_accept=args.auto_accept,
+                             profiles=_parse_profiles_arg(args.profiles))
 
     print("Usage:")
     print("  python3 .scripts/sdlc_harness.py --stage <stage> [--feature <intent>] [--force] [--context <file>] [--autopilot]")
@@ -338,6 +387,8 @@ def main():
     print("")
     print("Flags:")
     print("  --autopilot, -a   Run all remaining stages automatically after the requested stage completes.")
+    print("  --auto-accept     Dark-factory mode: implies --autopilot; skills skip interactive Q&A.")
+    print("  --profiles <list> Comma-separated spec profiles (gherkin-bdd, unit-tests, openapi-contract).")
     return 1
 
 

@@ -81,32 +81,39 @@ The harness supports <strong>two verification modalities</strong>, applied with 
 }</pre>
 </div>
 
+<div class="method-box primary">
+<h3>Spec Profiles: Deterministic Spec Verification</h3>
+<p>Every feature is specified through one or more pluggable <strong>spec profiles</strong>, each pairing a spec format with a deterministic, exit-code-based verifier. All selected profiles must exit 0 for the testing gate to pass — no LLM judgment is involved.</p>
+<table>
+<tr><th>Profile</th><th>Spec Artifact</th><th>Verifier (Python)</th><th>Verifier (Java)</th><th>Verifier (JS/TS)</th></tr>
+<tr><td><code>gherkin-bdd</code></td><td><code>*.feature</code> files</td><td>behave</td><td>cucumber-jvm via <code>mvn test</code> / <code>gradle test</code></td><td>@cucumber/cucumber</td></tr>
+<tr><td><code>unit-tests</code></td><td><code>TEST_CASES.md</code> (enumerated cases)</td><td>pytest</td><td>JUnit via <code>mvn test</code> / <code>gradle test</code></td><td>jest / vitest</td></tr>
+<tr><td><code>openapi-contract</code></td><td><code>openapi.yaml</code></td><td colspan="3">schemathesis against the running service (language-agnostic)</td></tr>
+</table>
+<p>Runners are auto-detected from the project (<code>pyproject.toml</code>, <code>pom.xml</code>, <code>package.json</code>, …) and overridable per profile in <code>sdlc.config.json</code>. If a runner is missing, the coding stage fails fast with install instructions — there is no silent fallback to LLM judgment.</p>
+</div>
+
 <div class="method-box secondary">
 <h3>Secondary: AI Inference Verification</h3>
-<p>AI inference is used where code-based verification is impractical or impossible. The harness invokes an LLM to evaluate compliance:</p>
+<p>AI inference is reserved for what cannot be deterministic — semantic judgment, not spec compliance:</p>
 <ul>
-<li><strong>Gherkin compliance</strong> — feeds Gherkin .feature files and implemented source code to an LLM, which determines whether all scenarios are adequately addressed. The LLM must respond with exactly <code>GHERKIN_COMPLIANCE: pass</code> or <code>GHERKIN_COMPLIANCE: fail</code></li>
 <li><strong>PRD alignment</strong> — the review stage uses an LLM to verify the git diff satisfies every PRD task and acceptance criterion</li>
 <li><strong>PRINCIPLES compliance</strong> — LLM evaluates the architecture document against project-specific principle rules defined in PRINCIPLES.md</li>
 <li><strong>PRD auto-update</strong> — after each stage, an LLM determines whether newly discovered information should be incorporated into the PRD</li>
+<li><strong>Solution classification</strong> — after planning, an LLM classifies the solution (ui / api / service / integration / data / mixed) and recommends spec profiles</li>
 </ul>
-<pre># AI verification prompt pattern from testing.py:
-"Determine if ALL the Gherkin scenarios are adequately
- addressed in the code. Respond with exactly one of:
- - 'GHERKIN_COMPLIANCE: pass'
- - 'GHERKIN_COMPLIANCE: fail'"</pre>
 </div>
 
 <h3>When Each Method Is Used</h3>
 
 <table>
 <tr><th>Stage</th><th>Code-Based Verification</th><th>AI Inference Verification</th></tr>
-<tr><td>planning</td><td>File exists, section headings, task checkboxes</td><td>—</td></tr>
+<tr><td>planning</td><td>File exists, section headings, task checkboxes</td><td>Solution classification &amp; profile recommendation (advisory)</td></tr>
 <tr><td>ui-design</td><td>File exists, section headings</td><td>—</td></tr>
 <tr><td>architecture</td><td>File exists, section headings</td><td>PRINCIPLES compliance against rules</td></tr>
-<tr><td>requirements</td><td>File exists, section headings, feature file glob</td><td>—</td></tr>
-<tr><td>coding</td><td>Lint, build, file existence</td><td>—</td></tr>
-<tr><td>testing</td><td>Test command exit code, coverage parsing</td><td>Gherkin scenario compliance</td></tr>
+<tr><td>requirements</td><td>File exists, section headings, per-profile spec artifact checks (feature files, TEST_CASES.md rows, OpenAPI document parses)</td><td>—</td></tr>
+<tr><td>coding</td><td>Lint, build, file existence, per-profile verifier commands (inside the iteration loop)</td><td>—</td></tr>
+<tr><td>testing</td><td>Test command exit code, coverage parsing, per-profile verifier commands (all must exit 0)</td><td>—</td></tr>
 <tr><td>review</td><td>File exists, recommendation line parsing</td><td>PRD alignment, PRINCIPLES compliance</td></tr>
 <tr><td>pr</td><td>gh auth, git branch check</td><td>—</td></tr>
 </table>

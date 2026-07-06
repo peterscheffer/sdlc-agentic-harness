@@ -37,6 +37,11 @@ BASE_CONFIG = {
     "coverage": {"enabled": False, "min_percentage": 80},
     "github": {"base_branch": "main"},
     "timeouts": {"llm_call_seconds": 120, "command_seconds": 300},
+    # Stub verifier command keeps profile gates deterministic without
+    # behave/pytest installed in the test environment; individual tests
+    # override command with `exit 1` to exercise failure paths.
+    "default_profiles": ["gherkin-bdd"],
+    "profiles": {"gherkin-bdd": {"command": "echo 'gherkin verifier ok'"}},
 }
 
 PRINCIPLES_CONTENT = """# PRINCIPLES

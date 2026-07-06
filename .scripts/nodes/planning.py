@@ -1,4 +1,5 @@
 import os
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -6,9 +7,16 @@ from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
 from utils.llm import call_llm
 from utils.output_validator import validate_stage_output
+from utils.toolchain import detect_language
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_has_heading, check_has_checkbox_tasks,
+)
+
+VALID_CLASSIFICATIONS = ("ui", "api", "service", "integration", "data", "mixed")
+CLASSIFY_RE = re.compile(
+    r'CLASSIFICATION:\s*(\w+)\s*\|\s*PROFILES:\s*([\w\-,\s]+)\s*\|\s*RATIONALE:\s*(.+)',
+    re.IGNORECASE,
 )
 
 PRD_PATH = "sdlc/planning/PRD.md"
@@ -112,6 +120,7 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
         state.stages["planning"].artefact = PRD_PATH
         state.current_stage = "planning"
         state.completed_stages.append("planning")
+        _classify_solution(state, config)
         print(f"\n[planning] \u2713 Gate checks passed (3/3)")
         print(f"\nReview {PRD_PATH}, then run: /ui-design  (or /architect to skip UI design)")
     else:
@@ -124,6 +133,73 @@ def execute_planning(state: SDLCPersistedState, config: SDLCConfig, intent: str,
         state.current_stage = "planning"
 
     return state
+
+
+def _classify_solution(state: SDLCPersistedState, config: SDLCConfig):
+    """Classify the solution type and recommend spec profiles.
+    Non-fatal: on any failure the classification is simply absent and
+    downstream stages fall back to config defaults."""
+    try:
+        with open(PRD_PATH) as f:
+            prd_content = f.read()
+
+        from profiles import PROFILE_REGISTRY, CLASSIFICATION_DEFAULTS
+        prompt = (
+            f"## PRD\n\n{prd_content}\n\n"
+            "## Instructions\n\n"
+            "Classify the solution described by this PRD and recommend how it should "
+            "be specified and verified.\n"
+            f"- Classification is one of: {', '.join(VALID_CLASSIFICATIONS)}\n"
+            f"- Recommended profiles from: {', '.join(sorted(PROFILE_REGISTRY))}\n"
+            "  (gherkin-bdd = executable Gherkin scenarios for user-facing flows; "
+            "unit-tests = enumerated test cases for business logic and services; "
+            "openapi-contract = OpenAPI document contract-tested against the running API)\n"
+            "- A solution may need multiple profiles (e.g. a web app with an API: "
+            "gherkin-bdd + openapi-contract + unit-tests)\n\n"
+            "Respond with EXACTLY one line in this format:\n"
+            "CLASSIFICATION: <type> | PROFILES: <comma-separated profiles> | RATIONALE: <one sentence>"
+        )
+        response = call_llm(
+            prompt=prompt,
+            stage="planning-classify",
+            config=config,
+            system_prompt=(
+                "You are a solution architect. Classify software solutions and "
+                "recommend best-practice specification and verification methods."
+            ),
+            pipeline_id=state.pipeline_id,
+        )
+        match = CLASSIFY_RE.search(response)
+        if not match:
+            print(f"[planning] Classification response unparseable — skipping (non-fatal)")
+            return
+
+        solution_type = match.group(1).strip().lower()
+        if solution_type not in VALID_CLASSIFICATIONS:
+            print(f"[planning] Unknown classification '{solution_type}' — skipping (non-fatal)")
+            return
+
+        recommended = [p.strip() for p in match.group(2).split(",")
+                       if p.strip() in PROFILE_REGISTRY]
+        if not recommended:
+            recommended = CLASSIFICATION_DEFAULTS.get(solution_type, ["unit-tests"])
+
+        state.solution_classification = {
+            "type": solution_type,
+            "language": detect_language(),
+            "recommended_profiles": recommended,
+            "rationale": match.group(3).strip(),
+        }
+        print(f"[planning] ✓ Solution classified as '{solution_type}' "
+              f"(language: {state.solution_classification['language']}); "
+              f"recommended spec profiles: {', '.join(recommended)}")
+
+        # Dark factory: adopt the recommendation without asking.
+        if state.auto_accept and not state.spec_profiles:
+            state.spec_profiles = recommended
+            print(f"[planning] ✓ Auto-accept: spec profiles set to {', '.join(recommended)}")
+    except Exception as e:
+        print(f"[planning] Classification skipped (non-fatal): {e}")
 
 
 def _ensure_required_sections(path: str):
