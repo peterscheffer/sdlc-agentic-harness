@@ -45,6 +45,8 @@ class ProfileConfig(BaseModel):
     server_command: Optional[str] = None  # openapi-contract: how to start the service
     base_url: Optional[str] = None        # openapi-contract: where the service listens
     health_path: Optional[str] = None     # openapi-contract: readiness endpoint
+    stitch_dir: Optional[str] = None      # stitch-ui: where Stitch screen exports live
+    css_path: Optional[str] = None        # stitch-ui: the app's global stylesheet with @theme
 
 
 class SDLCConfig(BaseModel):

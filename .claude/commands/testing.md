@@ -60,7 +60,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using yo
 
 ## Phase 4. Output Synthesis & Handover
 Read the stdout/stderr printed by the Python script.
-1. **Summarize Changes:** Outline the test results — how many tests passed/failed, plus the per-profile spec verification results from `sdlc/testing/TEST_REPORT.md`. Each selected spec profile is verified deterministically by running its verifier command (behave/cucumber-js/cucumber-jvm for gherkin-bdd, pytest/jest/vitest/JUnit for unit-tests, schemathesis for openapi-contract); ALL must exit 0 for the gate to pass. No LLM judgment is involved in spec verification.
+1. **Summarize Changes:** Outline the test results — how many tests passed/failed, plus the per-profile spec verification results from `sdlc/testing/TEST_REPORT.md`. Each selected spec profile is verified deterministically by running its verifier command (behave/cucumber-js/cucumber-jvm for gherkin-bdd, pytest/jest/vitest/JUnit for unit-tests, schemathesis for openapi-contract, `design_tokens.py check` against the Stitch screen exports for stitch-ui); ALL must exit 0 for the gate to pass. No LLM judgment is involved in spec verification.
 2. **Clear Context:** From this point forward, treat the prior testing discussion as deprecated noise to optimize current memory constraints.
 3. **Trigger Next Stage:** Prompt the user that the testing stage is complete and instruct them on how to proceed.
    _Example message to user:_
