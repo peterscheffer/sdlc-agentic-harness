@@ -2,14 +2,24 @@
 description: Assist user in proceeding through the Testing stage of the SDLC pipeline.
 ---
 
+## Phase 0.0: Auto-Accept Detection (Dark Factory Mode)
+Before any interactive phase, determine whether this run is in auto-accept mode:
+1. Run:
+   ```bash
+   python3 -c "import json,os;print(json.load(open('.sdlc_state.json')).get('auto_accept',False) if os.path.exists('.sdlc_state.json') else False)"
+   ```
+2. Auto-accept is active if that prints `True`, OR the user's invocation includes `--auto-accept`.
+3. If auto-accept is active: **SKIP every interactive questioning phase in this skill.** Answer each discovery question yourself using best-practice defaults inferred from the PRD, prior artefacts, and the repository. Record every decision you made in the context file under a heading `## Auto-Accepted Decisions`. Then proceed directly to the context-export and script-execution phase, appending `--auto-accept` to the `python3` command. Do not ask the user anything.
+
+
 ## Phase 0: Baseline State Initialization
 Before interacting with the user, you must establish the project's current state.
 1. Use your file-reading tool to open and read:
    - `sdlc/planning/PRD.md`
    - `sdlc/requirements/REQUIREMENTS.md`
-   - All `.feature` files under `sdlc/requirements/`
+   - All spec artifacts under `sdlc/requirements/` (`.feature` files, `TEST_CASES.md`, `openapi.yaml` — whichever the selected spec profiles produced)
    - The source code files that were generated or modified in the coding stage
-2. Absorb the product requirements, Gherkin scenarios, and current implementation.
+2. Absorb the product requirements, spec artifacts, and current implementation. Check `spec_profiles` in `.sdlc_state.json` to see which deterministic verifiers will run.
 3. Do **NOT** re-interview the user on information already captured in prior artefacts.
 
 ## Phase 1: Test Strategy Discovery (Dynamic Questioning)
@@ -50,9 +60,9 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using yo
 
 ## Phase 4. Output Synthesis & Handover
 Read the stdout/stderr printed by the Python script.
-1. **Summarize Changes:** Outline the test results — how many tests passed/failed, Gherkin compliance status, and any issues found.
+1. **Summarize Changes:** Outline the test results — how many tests passed/failed, plus the per-profile spec verification results from `sdlc/testing/TEST_REPORT.md`. Each selected spec profile is verified deterministically by running its verifier command (behave/cucumber-js/cucumber-jvm for gherkin-bdd, pytest/jest/vitest/JUnit for unit-tests, schemathesis for openapi-contract); ALL must exit 0 for the gate to pass. No LLM judgment is involved in spec verification.
 2. **Clear Context:** From this point forward, treat the prior testing discussion as deprecated noise to optimize current memory constraints.
 3. **Trigger Next Stage:** Prompt the user that the testing stage is complete and instruct them on how to proceed.
    _Example message to user:_
-   "Testing complete. All tests pass and Gherkin compliance is verified. To review the changes and prepare the PR, run: /review"
+   "Testing complete. The project test suite and every spec-profile verifier exited 0. To review the changes and prepare the PR, run: /review"
 4. CRITICAL: Hold the line here. Do NOT automatically fix failing tests, modify code, or skip ahead to the next stage yourself. Wait for human review and the next explicit command invocation.

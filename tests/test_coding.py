@@ -89,6 +89,19 @@ class TestFeature5Coding:
         if s["stages"]["coding"]["status"] == "complete":
             assert s["stages"]["coding"]["iterations"] >= 1
 
+    def test_iteration_log_written_on_success(self, tmp_project):
+        # Regression: ITERATIONS.md used to be written only on failure, so a
+        # passing run left behind a stale log from a prior failed attempt.
+        write_config(tmp_project)
+        setup_completed_requirements(tmp_project)
+        write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
+        run_pipeline(tmp_project, "coding")
+        s = state_content(tmp_project)
+        if s["stages"]["coding"]["status"] == "complete":
+            assert os.path.exists(tmp_project / "sdlc/coding/ITERATIONS.md")
+            content = (tmp_project / "sdlc/coding/ITERATIONS.md").read_text()
+            assert "**Result:** complete" in content
+
     def test_iteration1_gate_fails_proceeds_to_iteration2(self, tmp_project):
         write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
@@ -170,15 +183,18 @@ class TestFeature5Coding:
         assert len(logs) > 0
 
     def test_iteration_log_is_human_readable(self, tmp_project):
-        write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         setup_completed_requirements(tmp_project)
+        # write_config AFTER setup — the setup helpers re-write config with
+        # defaults, so an override placed before them is silently discarded.
+        write_config(tmp_project, {"commands": {"lint": "exit 1", "build": ""}})
         write_artefact(tmp_project, "sdlc/architecture/ARCH.md", MOCK_ARCH)
         run_pipeline(tmp_project, "coding")
         itermd = tmp_project / "sdlc/coding/ITERATIONS.md"
         if itermd.exists():
             content = itermd.read_text()
             assert "Iteration" in content or "iteration" in content.lower()
-            assert "Linter" in content or "Build" in content or "File" in content
+            # Dynamic per-gate columns use the raw gate names.
+            assert "linter_passed" in content or "target_files_exist" in content
 
     def test_update_state_on_coding_success(self, tmp_project):
         write_config(tmp_project)

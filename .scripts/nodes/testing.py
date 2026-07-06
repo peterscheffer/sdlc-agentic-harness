@@ -1,4 +1,3 @@
-import glob
 import os
 import subprocess
 import re
@@ -7,11 +6,11 @@ from typing import Optional
 
 from utils.state import SDLCPersistedState
 from utils.config import SDLCConfig
-from utils.llm import call_llm
 from gates.gate_runner import (
     GateCheck, run_gate_checks,
     check_file_exists, check_file_not_empty,
 )
+from profiles import get_profiles
 
 TEST_REPORT_PATH = "sdlc/testing/TEST_REPORT.md"
 
@@ -86,6 +85,8 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
         state.current_stage = "testing"
         return state
 
+    coverage_met = coverage_percent is not None and \
+        coverage_percent >= config.coverage.min_percentage
     if config.coverage.enabled and coverage_percent is not None and not coverage_met:
         print(f"\n[testing] \u2717 Coverage {coverage_percent:.0f}% is below minimum {config.coverage.min_percentage}%.")
         print(f"[testing] Write additional tests and retry: /testing")
@@ -93,8 +94,17 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
         state.current_stage = "testing"
         return state
 
-    gherkin_compliance_passed, gherkin_message = _check_gherkin_compliance(config)
-    _append_gherkin_compliance_to_report(gherkin_compliance_passed, gherkin_message)
+    # Deterministic spec verification: run each selected profile's verifier
+    # (BDD runner / test runner / contract tester) and gate on its exit code.
+    try:
+        spec_profiles = get_profiles(state, config)
+    except ValueError as e:
+        print(f"\n[testing] \u2717 {e}")
+        state.stages["testing"].status = "failed"
+        state.current_stage = "testing"
+        return state
+
+    profile_results = _run_profile_verifiers(spec_profiles)
 
     gate_checks_list = [
         GateCheck("tests_passed", "Tests pass",
@@ -103,9 +113,15 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
                   lambda: check_file_exists(TEST_REPORT_PATH)),
         GateCheck("report_not_empty", "TEST_REPORT.md not empty",
                   lambda: check_file_not_empty(TEST_REPORT_PATH)),
-        GateCheck("gherkin_compliance", "Gherkin scenarios implemented",
-                  lambda: (gherkin_compliance_passed, gherkin_message)),
     ]
+
+    for profile, verified, message, result in profile_results:
+        gate_checks_list.append(
+            GateCheck(profile.gate_name,
+                      f"{profile.display_name} spec verified",
+                      lambda v=verified, m=message: (v, m))
+        )
+        _append_profile_result_to_report(profile, verified, message, result)
 
     if config.coverage.enabled:
         gate_checks_list.append(
@@ -117,12 +133,6 @@ def execute_testing(state: SDLCPersistedState, config: SDLCConfig) -> SDLCPersis
 
     for msg in messages:
         print(msg)
-
-    if not gherkin_compliance_passed:
-        print(f"\n[testing] \u2717 Gherkin compliance check failed: {gherkin_message}")
-        state.stages["testing"].status = "failed"
-        state.current_stage = "testing"
-        return state
 
     if passed:
         state.stages["testing"].status = "complete"
@@ -257,83 +267,49 @@ def _write_test_report(
         f.write("\n".join(lines) + "\n")
 
 
-def _check_gherkin_compliance(config: SDLCConfig) -> tuple[bool, str]:
-    feature_files = sorted(glob.glob("sdlc/requirements/*.feature"))
-    if not feature_files:
-        return True, "No Gherkin feature files found — compliance check skipped"
+def _run_profile_verifiers(spec_profiles) -> list[tuple]:
+    """Run each profile's deterministic verifier.
+    Returns [(profile, verified, message, result_dict_or_None), ...].
 
-    if not os.path.exists("sdlc/architecture/ARCH.md"):
-        return True, "ARCH.md not found — compliance check skipped"
-
-    with open("sdlc/architecture/ARCH.md") as f:
-        arch_content = f.read()
-
-    gherkin_specs = []
-    for ff in feature_files:
-        with open(ff) as f:
-            gherkin_specs.append(f"--- {os.path.basename(ff)} ---\n{f.read()}")
-
-    source_files = []
-    in_target = False
-    for line in arch_content.split("\n"):
-        if line.startswith("## Target Files"):
-            in_target = True
+    Legacy leniency: a profile whose spec artifacts don't exist (e.g. a
+    pre-profile pipeline with no .feature files) is recorded as skipped/pass
+    rather than failing the stage.
+    """
+    results = []
+    for profile in spec_profiles:
+        if not profile.spec_artifacts():
+            print(f"[testing] - {profile.display_name}: no spec artifacts found \u2014 skipped")
+            results.append((profile, True,
+                            f"No {profile.display_name} spec artifacts found \u2014 verification skipped",
+                            None))
             continue
-        if in_target and line.startswith("## "):
-            break
-        if in_target and "|" in line:
-            parts = [p.strip() for p in line.split("|")]
-            if len(parts) >= 3 and parts[1] and parts[1] not in ("File", "", "---") and not all(c == "-" for c in parts[1]):
-                tf = parts[1]
-                if os.path.exists(tf):
-                    with open(tf) as f:
-                        source_files.append(f"--- {tf} ---\n{f.read()}")
-                else:
-                    gherkin_specs.append(f"--- {tf} ---\n(not yet created)")
 
-    prompt_parts = [
-        "## Gherkin Specifications\n",
-        "\n".join(gherkin_specs),
-        "\n\n## Source Code\n",
-        "\n".join(source_files) if source_files else "(no source files found)",
-        "\n\n## Instructions\n",
-        "Review the Gherkin feature files and the source code implementation. ",
-        "Determine if ALL the Gherkin scenarios are adequately addressed in the code. ",
-        "Respond with exactly one of:\n",
-        "- 'GHERKIN_COMPLIANCE: pass' if all scenarios are implemented\n",
-        "- 'GHERKIN_COMPLIANCE: fail' with a brief explanation of what is missing",
-    ]
-    user_prompt = "".join(prompt_parts)
+        ok, message = profile.preflight()
+        if not ok:
+            print(f"[testing] \u2717 {profile.display_name} preflight failed: {message}")
+            results.append((profile, False, f"Preflight failed: {message}", None))
+            continue
 
-    system_prompt = (
-        "You are a quality assurance engineer. "
-        "Verify that the implemented source code satisfies all Gherkin scenarios."
-    )
-
-    try:
-        response = call_llm(
-            prompt=user_prompt,
-            stage="gherkin-compliance",
-            config=config,
-            system_prompt=system_prompt,
-        )
-    except RuntimeError as e:
-        return False, f"LLM compliance check failed: {e}"
-
-    stripped = response.strip()
-    if stripped.startswith("GHERKIN_COMPLIANCE: pass"):
-        return True, "All Gherkin scenarios are implemented"
-    elif stripped.startswith("GHERKIN_COMPLIANCE: fail"):
-        detail = stripped[len("GHERKIN_COMPLIANCE: fail"):].strip()
-        return False, detail or "Gherkin compliance check failed"
-    return False, f"Unexpected compliance response: {stripped[:200]}"
+        print(f"[testing] Running {profile.display_name} verifier: {profile.resolve_command()}")
+        result = profile.run_verifier()
+        verified = result["exit_code"] == 0 and not result["timed_out"]
+        if verified:
+            message = f"Verifier exited 0: {result['command']}"
+        else:
+            tail = result["output"][-500:] if result["output"] else "(no output)"
+            message = f"Verifier exited {result['exit_code']}: {tail}"
+        results.append((profile, verified, message, result))
+    return results
 
 
-def _append_gherkin_compliance_to_report(passed: bool, message: str):
+def _append_profile_result_to_report(profile, verified: bool, message: str, result):
     if not os.path.exists(TEST_REPORT_PATH):
         return
     with open(TEST_REPORT_PATH, "a") as f:
-        f.write("\n## Gherkin Compliance\n")
-        icon = "\u2713" if passed else "\u2717"
-        f.write(f"**Status:** {icon} {'PASSED' if passed else 'FAILED'}\n")
-        f.write(f"**Message:** {message}\n")
+        if result is not None:
+            f.write(profile.report_section(result))
+        else:
+            icon = "\u2713" if verified else "\u2717"
+            f.write(f"\n## Spec Verification: {profile.display_name}\n")
+            f.write(f"**Status:** {icon} {'SKIPPED' if verified else 'FAILED'}\n")
+            f.write(f"**Message:** {message}\n")

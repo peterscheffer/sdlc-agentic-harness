@@ -18,6 +18,13 @@ REQUIRED_DESIGN_SECTIONS = ["## Overview"]
 
 
 def should_skip_ui_design(state: SDLCPersistedState) -> bool:
+    # Prefer the planning stage's solution classification; the keyword scan
+    # is only a fallback for legacy states without one.
+    classification = state.solution_classification or {}
+    solution_type = classification.get("type")
+    if solution_type:
+        return solution_type not in ("ui", "mixed")
+
     prd_path = "sdlc/planning/PRD.md"
     if not os.path.exists(prd_path):
         return True

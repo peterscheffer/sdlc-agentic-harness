@@ -2,6 +2,16 @@
 description: Assist user in proceeding through the UI-Design stage of the SDLC pipeline.
 ---
 
+## Phase 0.0: Auto-Accept Detection (Dark Factory Mode)
+Before any interactive phase, determine whether this run is in auto-accept mode:
+1. Run:
+   ```bash
+   python3 -c "import json,os;print(json.load(open('.sdlc_state.json')).get('auto_accept',False) if os.path.exists('.sdlc_state.json') else False)"
+   ```
+2. Auto-accept is active if that prints `True`, OR the user's invocation includes `--auto-accept`.
+3. If auto-accept is active: **SKIP every interactive questioning phase in this skill.** Answer each discovery question yourself using best-practice defaults inferred from the PRD, prior artefacts, and the repository. Record every decision you made in the context file under a heading `## Auto-Accepted Decisions`. Then proceed directly to the context-export and script-execution phase, appending `--auto-accept` to the `python3` command. Do not ask the user anything.
+
+
 ## Phase 0: Baseline State Initialization
 Before interacting with the user, you must establish the project's current state.
 1. Use your file-reading tool to open and read the contents of `sdlc/planning/PRD.md` and `sdlc/architecture/ARCH.md`.
@@ -39,7 +49,7 @@ Once the gate in Phase 2 is passed, execute the following steps exactly using yo
    ```
 3. Execute the LangGraph pipeline execution script for the ui-design stage:
    ```bash
-   python3 .scripts/langgraph_sdlc.py --stage ui-design --context "$CONTEXT_FILE"
+   python3 .scripts/sdlc_harness.py --stage ui-design --context "$CONTEXT_FILE"
    ```
 
 ## Phase 4. Output Synthesis & Handover

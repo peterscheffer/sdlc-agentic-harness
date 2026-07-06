@@ -105,6 +105,9 @@ The harness is configured via <code>sdlc.config.json</code> at the project root.
 <tr><td><code>build</code></td><td>No</td><td>Shell command for building (empty = skip)</td></tr>
 <tr><td><code>test</code></td><td>Yes</td><td>Shell command for running tests</td></tr>
 <tr><td><code>coverage_report</code></td><td>—</td><td>No</td><td>Path to coverage JSON report for parsing</td></tr>
+<tr><td><code>default_profiles</code></td><td>&mdash;</td><td>No</td><td>Spec profiles used when none selected (default: <code>["gherkin-bdd"]</code>)</td></tr>
+<tr><td rowspan="2"><code>profiles.&lt;name&gt;</code></td><td><code>runner</code></td><td>No</td><td>Verifier runner override (behave, cucumber-js, cucumber-jvm, pytest, jest, vitest, junit, schemathesis)</td></tr>
+<tr><td><code>command</code>, <code>steps_dir</code>, <code>tests_dir</code>, <code>spec_path</code>, <code>server_command</code>, <code>base_url</code>, <code>health_path</code></td><td>No</td><td>Per-profile verifier configuration; <code>command</code> overrides the composed verifier entirely</td></tr>
 <tr><td rowspan="2"><code>coverage</code></td><td><code>enabled</code></td><td>No</td><td>Enable coverage threshold gating (default: false)</td></tr>
 <tr><td><code>min_percentage</code></td><td>No</td><td>Minimum coverage percentage (default: 80)</td></tr>
 <tr><td><code>github</code></td><td><code>base_branch</code></td><td>No</td><td>Target branch for PRs, defaults to <code>main</code></td></tr>
@@ -121,7 +124,7 @@ The harness is configured via <code>sdlc.config.json</code> at the project root.
 <tr><td><code>planning</code></td><td>Document generation, requirement analysis</td><td>Smaller/faster model</td></tr>
 <tr><td><code>architecture</code></td><td>System design, decision records</td><td>Mid-size model with reasoning</td></tr>
 <tr><td><code>coding</code></td><td>Code generation, iterative refinement</td><td>Largest/most capable model</td></tr>
-<tr><td><code>testing</code></td><td>Gherkin compliance verification (AI inference)</td><td>Mid-size capable of code understanding</td></tr>
+<tr><td><code>testing</code></td><td>Test report generation (spec verification itself is deterministic)</td><td>Mid-size capable of code understanding</td></tr>
 <tr><td><code>review</code></td><td>Code review, quality assessment</td><td>Largest model for thorough analysis</td></tr>
 </table>
 

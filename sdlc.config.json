@@ -38,6 +38,12 @@
   "github": {
     "base_branch": "main"
   },
+  "default_profiles": ["gherkin-bdd"],
+  "profiles": {
+    "gherkin-bdd": {
+      "runner": "behave"
+    }
+  },
   "timeouts": {
     "llm_call_seconds": 900,
     "command_seconds": 120

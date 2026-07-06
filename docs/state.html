@@ -91,7 +91,10 @@ Pipeline state is persisted to <code>.sdlc_state.json</code>, a Pydantic v2-vali
       }
     }
   },
-  "pr_url": null
+  "pr_url": null,
+  "spec_profiles": ["gherkin-bdd", "unit-tests"],
+  "solution_classification": {"type": "mixed", "language": "python", "recommended_profiles": ["gherkin-bdd", "unit-tests"], "rationale": "..."},
+  "auto_accept": false
 }</pre>
 
 <h3>Validation with Pydantic v2</h3>
@@ -108,7 +111,10 @@ Pipeline state is persisted to <code>.sdlc_state.json</code>, a Pydantic v2-vali
     stages: dict[str, StageEntry] = Field(default_factory=lambda: {
         s: StageEntry() for s in VALID_STAGES
     })
-    pr_url: Optional[str] = None</pre>
+    pr_url: Optional[str] = None
+    spec_profiles: list[str] = []
+    solution_classification: Optional[dict] = None
+    auto_accept: bool = False</pre>
 
 <p>Unknown or future stages are ignored by the parser (forward-compatible design). If the state file is corrupted, the harness exits with a clear error and instructs the developer to run <code>/sdlc reset</code>.</p>
 

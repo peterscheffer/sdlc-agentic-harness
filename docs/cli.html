@@ -79,6 +79,16 @@ The harness is invoked via <code>python3 .scripts/sdlc_harness.py</code> from th
 
 <p>The autopilot loop runs each stage sequentially, checks for failures, updates the PRD after each stage, and generates metrics. If any stage fails (or the review recommends FAIL), the autopilot halts and reports the issue.</p>
 
+<h3>Dark Factory Mode (--auto-accept)</h3>
+
+<p>The <code>--auto-accept</code> flag is a superset of <code>--autopilot</code>: it records <code>auto_accept</code> in pipeline state so the Claude/OpenCode skills skip interactive Q&amp;A (answering with best-practice defaults), the planning stage auto-adopts the recommended spec profiles, and the whole pipeline runs planning&nbsp;&rarr;&nbsp;pr unattended with deterministic gate verification at every stage:</p>
+
+<pre>python3 .scripts/sdlc_harness.py --stage planning --feature "add a /health endpoint" --auto-accept</pre>
+
+<p>The <code>--profiles</code> flag overrides spec-profile selection explicitly:</p>
+
+<pre>python3 .scripts/sdlc_harness.py --stage planning --feature "..." --profiles openapi-contract,unit-tests</pre>
+
 <h3>Context Injection</h3>
 
 <p>The <code>--context</code> flag allows injecting prior conversation context from a file. This context is included in the LLM system prompt and takes precedence over conflicting information in existing artefacts:</p>

@@ -54,18 +54,18 @@ tr:nth-child(even) { background: #fafafa; }
 <h2>Gherkin Specifications &amp; Requirements Engineering</h2>
 
 <p>
-The requirements stage produces both a structured <code>REQUIREMENTS.md</code> document and <strong>Gherkin .feature files</strong> that serve as executable specifications. The testing stage then uses AI inference to verify that all Gherkin scenarios are implemented in the source code.
+The requirements stage produces a structured <code>REQUIREMENTS.md</code> document plus one spec artifact per selected <strong>spec profile</strong>. When the <code>gherkin-bdd</code> profile is selected, that artifact is a set of <strong>executable Gherkin .feature files</strong>: the coding stage generates real step definitions for them, and the testing stage runs an actual BDD runner (behave, cucumber-js, or cucumber-jvm) — pass/fail is the runner's exit code.
 </p>
 
 <h3>Requirements Document</h3>
 
-<p><code>sdlc/requirements/REQUIREMENTS.md</code> contains three structured tables:</p>
+<p><code>sdlc/requirements/REQUIREMENTS.md</code> contains three structured tables (profile-neutral — it looks the same whether the solution is a UI, an API, a service, or a data layer):</p>
 
 <table>
 <tr><th>Section</th><th>Columns</th><th>Purpose</th></tr>
 <tr><td>Functional Requirements</td><td>ID, Description, Priority (High/Medium/Low)</td><td>What the system must do</td></tr>
 <tr><td>Non-Functional Requirements</td><td>ID, Description</td><td>Performance, security, scalability constraints</td></tr>
-<tr><td>Behavioural Requirements</td><td>ID, Scenario, Expected Behaviour</td><td>How the system behaves in specific situations</td></tr>
+<tr><td>Acceptance Criteria</td><td>ID, Criterion, Verified By</td><td>Verifiable completion conditions, each mapped to the spec artifact that verifies it</td></tr>
 </table>
 
 <h3>Gherkin Feature Files</h3>
@@ -86,41 +86,37 @@ The requirements stage produces both a structured <code>REQUIREMENTS.md</code> d
 
 <p>Generated feature files are written to <code>sdlc/requirements/</code> with kebab-case filenames (e.g., <code>user-authentication.feature</code>).</p>
 
-<h3>AI-Based Gherkin Compliance Verification</h3>
+<h3>Executable Gherkin: Step Definitions + BDD Runner</h3>
 
 <div class="highlight">
-<p>The testing stage runs an <strong>AI inference compliance check</strong> that feeds Gherkin feature files and the implemented source code to an LLM. The LLM determines whether all scenarios are adequately addressed in the code.</p>
+<p>Gherkin verification is <strong>fully deterministic</strong>. The coding stage generates step definitions as first-class targets alongside the application code; the testing stage executes the feature files with a real BDD runner and gates on its exit code. There is no LLM compliance judgment.</p>
 </div>
 
-<p>The verification prompt structure (from <code>nodes/testing.py</code>):</p>
+<p>The runner and step-definition location are chosen per project language (auto-detected, overridable via <code>sdlc.config.json</code>):</p>
 
-<pre>prompt_parts = [
-    "## Gherkin Specifications\n" + gherkin_specs,
-    "\n\n## Source Code\n" + source_files,
-    "\n\n## Instructions\n",
-    "Review the Gherkin feature files and the source code implementation. ",
-    "Determine if ALL the Gherkin scenarios are adequately addressed in the code. ",
-    "Respond with exactly one of:\n",
-    "- 'GHERKIN_COMPLIANCE: pass' if all scenarios are implemented\n",
-    "- 'GHERKIN_COMPLIANCE: fail' with a brief explanation of what is missing",
-]</pre>
+<table>
+<tr><th>Language</th><th>Runner</th><th>Step definitions</th><th>Verifier command</th></tr>
+<tr><td>Python</td><td>behave</td><td><code>sdlc/requirements/steps/*_steps.py</code></td><td><code>python3 -m behave sdlc/requirements -f plain</code></td></tr>
+<tr><td>Java</td><td>cucumber-jvm</td><td><code>src/test/java/sdlc/steps/*Steps.java</code> + JUnit runner class</td><td><code>mvn -q test</code> / <code>gradle test</code></td></tr>
+<tr><td>JS/TS</td><td>@cucumber/cucumber</td><td><code>sdlc/requirements/steps/*.steps.{js,ts}</code></td><td><code>npx cucumber-js sdlc/requirements --require &lt;steps&gt;</code></td></tr>
+</table>
 
-<p>The LLM's response is parsed programmatically:</p>
-<ul>
-<li><code>GHERKIN_COMPLIANCE: pass</code> → gate passes</li>
-<li><code>GHERKIN_COMPLIANCE: fail</code> → gate fails, stage status set to failed</li>
-<li>Unexpected response → gate fails</li>
-</ul>
+<p>The verifier also runs <em>inside the coding iteration loop</em>: an unbound step or failing assertion feeds the runner output back into the next LLM iteration until the scenarios pass or the iteration budget is exhausted. If the runner is not installed, the coding stage fails fast at preflight with the exact install command — there is no silent fallback.</p>
 
-<p>The compliance result is appended to <code>TEST_REPORT.md</code>:</p>
+<p>The per-profile result is appended to <code>TEST_REPORT.md</code>:</p>
 
-<pre>## Gherkin Compliance
+<pre>## Spec Verification: Gherkin BDD
 **Status:** ✓ PASSED
-**Message:** All Gherkin scenarios are implemented</pre>
+**Command:** `python3 -m behave sdlc/requirements -f plain`
+**Exit Code:** 0</pre>
 
-<h3>Future Enhancement: Executable Gherkin</h3>
+<h3>Beyond Gherkin: Other Spec Profiles</h3>
 
-<p>As noted in <code>docs/SPEC_GAPS.md</code>, the current AI-based verification is a stepping stone toward fully executable Gherkin. The highest-leverage enhancement would be integrating <code>pytest-bdd</code> to run .feature files as real passing/failing tests, replacing the LLM compliance guess with actual test results.</p>
+<p>Gherkin is one of several spec profiles; a feature can select any combination during the requirements Q&amp;A (the LLM recommends based on the solution classification, the user confirms — or auto-accept adopts the recommendation):</p>
+<ul>
+<li><code>unit-tests</code> — requirements enumerated as concrete test cases in <code>TEST_CASES.md</code>, implemented and run with pytest / jest / vitest / JUnit. Best for services, business logic, integrations, and data layers.</li>
+<li><code>openapi-contract</code> — an OpenAPI document in <code>sdlc/requirements/openapi.yaml</code>, contract-tested against the running service with schemathesis. Best for REST APIs.</li>
+</ul>
 
 <h3>See Also</h3>
 <ul>
