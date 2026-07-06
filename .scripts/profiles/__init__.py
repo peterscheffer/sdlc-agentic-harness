@@ -6,11 +6,13 @@ from profiles.base import SpecProfile
 from profiles.gherkin_bdd import GherkinBddProfile
 from profiles.unit_tests import UnitTestsProfile
 from profiles.openapi_contract import OpenApiContractProfile
+from profiles.stitch_ui import StitchUiProfile
 
 PROFILE_REGISTRY: dict[str, type[SpecProfile]] = {
     GherkinBddProfile.name: GherkinBddProfile,
     UnitTestsProfile.name: UnitTestsProfile,
     OpenApiContractProfile.name: OpenApiContractProfile,
+    StitchUiProfile.name: StitchUiProfile,
 }
 
 LEGACY_DEFAULT = ["gherkin-bdd"]
@@ -18,8 +20,8 @@ LEGACY_DEFAULT = ["gherkin-bdd"]
 # Recommended profile sets per solution classification; used when a
 # classification exists but no explicit selection was made.
 CLASSIFICATION_DEFAULTS = {
-    "ui": ["gherkin-bdd", "unit-tests"],
-    "mixed": ["gherkin-bdd", "unit-tests"],
+    "ui": ["stitch-ui", "gherkin-bdd", "unit-tests"],
+    "mixed": ["stitch-ui", "gherkin-bdd", "unit-tests"],
     "api": ["openapi-contract", "unit-tests"],
     "service": ["unit-tests"],
     "integration": ["unit-tests"],

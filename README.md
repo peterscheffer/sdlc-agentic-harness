@@ -48,6 +48,7 @@ gate to pass. LLM judgment is used only where determinism is impossible
 | `gherkin-bdd` | `sdlc/requirements/*.feature` | behave / cucumber-jvm (`mvn test`, `gradle test`) / @cucumber/cucumber |
 | `unit-tests` | `sdlc/requirements/TEST_CASES.md` | pytest / JUnit / jest or vitest |
 | `openapi-contract` | `sdlc/requirements/openapi.yaml` | schemathesis against the running service |
+| `stitch-ui` | `sdlc/ui-design/DESIGN.md` + Stitch screen exports (`sdlc/ui-design/stitch/**/code.html`) | `design_tokens.py check` — every design token in the exports must be declared in the app's global stylesheet |
 
 The coding stage generates step definitions and test skeletons as first-class
 targets and runs each verifier inside its iteration loop, so runner failures
@@ -64,9 +65,22 @@ and overridable per profile in `sdlc.config.json`:
     "server_command": "uvicorn app:app --port 8000",
     "base_url": "http://127.0.0.1:8000",
     "health_path": "/health"
+  },
+  "stitch-ui": {
+    "stitch_dir": "sdlc/ui-design/stitch",
+    "css_path": "src/app/globals.css"
   }
 }
 ```
+
+The `stitch-ui` profile's spec artifacts are produced by the ui-design stage,
+not the requirements stage: the ui-design skill retrieves generated screens
+through the Stitch MCP connection (project → design system from DESIGN.md →
+screens → `code.html` exports), or you export them manually from Stitch. The
+requirements gate blocks until the exports exist; the coding loop
+deterministically ports the embedded design tokens into the global stylesheet
+(`design_tokens.py port`) before verifying; the testing stage re-checks the
+final stylesheet so a dropped token fails the gate.
 
 > **Breaking change:** the `gherkin-bdd` profile now requires a real BDD runner
 > (it previously used an LLM compliance check). If the runner is not installed,
@@ -149,7 +163,7 @@ python3 .scripts/sdlc_harness.py --stage coding --feature "..." --autopilot
 | `--context <file>` | Path to a file containing prior conversation context |
 | `--autopilot`, `-a` | After the requested stage succeeds, run all remaining stages |
 | `--auto-accept` | Dark-factory mode: implies `--autopilot`; skills skip interactive Q&A and profile recommendations are auto-adopted |
-| `--profiles <list>` | Comma-separated spec profiles override (`gherkin-bdd`, `unit-tests`, `openapi-contract`) |
+| `--profiles <list>` | Comma-separated spec profiles override (`gherkin-bdd`, `unit-tests`, `openapi-contract`, `stitch-ui`) |
 | `--force` | Skip confirmation (reset) or force PR submission |
 
 ### OpenCode slash commands

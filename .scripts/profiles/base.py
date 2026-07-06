@@ -106,6 +106,14 @@ class SpecProfile:
             )
         return [GateCheck(self.gate_name, f"{self.display_name} verifier passes", _check)]
 
+    def coding_verification_gate_checks(self, detail_chars: int = 2000) -> list[GateCheck]:
+        """Gate checks run inside the coding iteration loop. Defaults to the
+        testing-stage verifier; profiles with a mechanical repair step (e.g.
+        the stitch-ui token port) may run it here before checking, so the
+        coding loop converges deterministically instead of burning LLM
+        iterations on a mechanical porting task."""
+        return self.verification_gate_checks(detail_chars)
+
     def report_section(self, result: dict) -> str:
         icon = "✓" if result["exit_code"] == 0 and not result["timed_out"] else "✗"
         status = "PASSED" if result["exit_code"] == 0 and not result["timed_out"] else \

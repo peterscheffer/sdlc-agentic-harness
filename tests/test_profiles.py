@@ -30,8 +30,8 @@ def in_tmp_dir(tmp_path, monkeypatch):
 
 
 class TestRegistryResolution:
-    def test_all_three_profiles_registered(self):
-        assert set(PROFILE_REGISTRY) == {"gherkin-bdd", "unit-tests", "openapi-contract"}
+    def test_all_profiles_registered(self):
+        assert set(PROFILE_REGISTRY) == {"gherkin-bdd", "unit-tests", "openapi-contract", "stitch-ui"}
 
     def test_override_wins_over_state_and_config(self):
         state = SDLCPersistedState(spec_profiles=["unit-tests"])

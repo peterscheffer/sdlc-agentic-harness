@@ -211,7 +211,7 @@ def execute_coding(state: SDLCPersistedState, config: SDLCConfig, conversation_c
         # (unbound steps, failing assertions, contract mismatches) feed back
         # into the next iteration's prompt.
         for profile in spec_profiles:
-            gate_checks.extend(profile.verification_gate_checks())
+            gate_checks.extend(profile.coding_verification_gate_checks())
 
         passed, messages = run_gate_checks("coding", gate_checks, state)
 

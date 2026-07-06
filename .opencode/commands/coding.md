@@ -19,7 +19,8 @@ Before interacting with the user, you must establish the project's current state
    - `sdlc/architecture/ARCH.md`
    - `sdlc/requirements/REQUIREMENTS.md`
    - All spec artifacts under `sdlc/requirements/` (`.feature` files, `TEST_CASES.md`, `openapi.yaml` — whichever the selected spec profiles produced)
-2. Absorb the product requirements, architectural blueprint, functional specifications, and spec artifacts. Note: the coding stage generates spec scaffolds (BDD step definitions, test skeletons) as first-class targets alongside the application code, and runs each spec profile's verifier inside its iteration loop, so verifier failures feed back into the next iteration.
+   - If `stitch-ui` is in `spec_profiles` in `.sdlc_state.json`: `sdlc/ui-design/DESIGN.md` and the Stitch screen exports under `sdlc/ui-design/stitch/` (the `code.html` files are the visual ground truth — the UI code must reuse their custom Tailwind token utility classes and layout)
+2. Absorb the product requirements, architectural blueprint, functional specifications, and spec artifacts. Note: the coding stage generates spec scaffolds (BDD step definitions, test skeletons) as first-class targets alongside the application code, and runs each spec profile's verifier inside its iteration loop, so verifier failures feed back into the next iteration. For `stitch-ui`, the loop also deterministically ports the Stitch design tokens into the app's global stylesheet (`design_tokens.py port`) before checking, so a partial token port can never silently ship.
 3. Do **NOT** re-interview the user on information already captured in prior artefacts.
 
 ## Phase 1: Implementation Discovery (Dynamic Questioning)
