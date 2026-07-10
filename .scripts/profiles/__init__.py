@@ -4,12 +4,14 @@ from utils.config import SDLCConfig
 from utils.state import SDLCPersistedState
 from profiles.base import SpecProfile
 from profiles.gherkin_bdd import GherkinBddProfile
+from profiles.var_spec import VarSpecProfile
 from profiles.unit_tests import UnitTestsProfile
 from profiles.openapi_contract import OpenApiContractProfile
 from profiles.stitch_ui import StitchUiProfile
 
 PROFILE_REGISTRY: dict[str, type[SpecProfile]] = {
     GherkinBddProfile.name: GherkinBddProfile,
+    VarSpecProfile.name: VarSpecProfile,
     UnitTestsProfile.name: UnitTestsProfile,
     OpenApiContractProfile.name: OpenApiContractProfile,
     StitchUiProfile.name: StitchUiProfile,

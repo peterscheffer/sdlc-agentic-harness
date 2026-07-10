@@ -53,6 +53,7 @@ tr:nth-child(even) { background: #fafafa; }
 <a href="state.html">State Persistence</a>
 <a href="principles.html">PRINCIPLES.md</a>
 <a href="gherkin.html">Gherkin Specs</a>
+<a href="var-spec.html">V&aacute;r Spec</a>
 <a href="review-pr.html">Review &amp; PR</a>
 <a href="cli.html">CLI Reference</a>
 <a href="config.html">Configuration</a>
@@ -115,8 +116,14 @@ tr:nth-child(even) { background: #fafafa; }
 
 <div class="feature-card">
 <h3><a href="gherkin.html">Gherkin Specs</a></h3>
-<p>Requirements stage generates Gherkin .feature files; testing stage uses AI to verify all scenarios are implemented in code.</p>
-<span class="tag">executable specs</span> <span class="tag">AI compliance check</span>
+<p>Requirements stage generates Gherkin .feature files; a real BDD runner (behave/cucumber-js/cucumber-jvm) executes them deterministically.</p>
+<span class="tag">executable specs</span> <span class="tag">deterministic verification</span>
+</div>
+
+<div class="feature-card">
+<h3><a href="var-spec.html">V&aacute;r Spec</a></h3>
+<p>Alternative spec profile: executable specs written as plain Markdown, no Gherkin dialect — the document itself is the test.</p>
+<span class="tag">markdown-as-tests</span> <span class="tag">opt-in</span>
 </div>
 
 <div class="feature-card">
@@ -156,7 +163,8 @@ tr:nth-child(even) { background: #fafafa; }
 <tr><td><a href="logging.html">LLM Logging</a></td><td>Structured logging, secrets redaction, token tracking</td></tr>
 <tr><td><a href="state.html">State Persistence</a></td><td>Crash recovery, state schema, stage transitions</td></tr>
 <tr><td><a href="principles.html">PRINCIPLES.md</a></td><td>Project-specific guardrails and enforcement</td></tr>
-<tr><td><a href="gherkin.html">Gherkin Specs</a></td><td>Executable specifications and AI compliance verification</td></tr>
+<tr><td><a href="gherkin.html">Gherkin Specs</a></td><td>Executable Gherkin .feature files, verified by a real BDD runner</td></tr>
+<tr><td><a href="var-spec.html">V&aacute;r Spec</a></td><td>Alternative spec profile: plain-Markdown executable specs (opt-in)</td></tr>
 <tr><td><a href="review-pr.html">Review &amp; PR</a></td><td>Self-review workflow and GitHub PR submission</td></tr>
 <tr><td><a href="cli.html">CLI Reference</a></td><td>All command-line options and subcommands</td></tr>
 <tr><td><a href="config.html">Configuration</a></td><td>sdlc.config.json reference and per-stage model config</td></tr>

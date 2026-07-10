@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDLC Agentic Harness — Vár Spec</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; display: flex; min-height: 100vh; background: #f8f9fa; color: #333; }
+nav { width: 260px; background: #1a1a2e; color: #eee; padding: 24px 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; }
+nav h1 { font-size: 18px; padding: 0 20px 16px; border-bottom: 1px solid #333; margin-bottom: 8px; color: #fff; }
+nav a { display: block; padding: 10px 20px; color: #bbb; text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: #fff; background: #16213e; }
+nav a.active { border-left: 3px solid #4fc3f7; }
+main { margin-left: 260px; flex: 1; padding: 40px 48px; max-width: 1100px; }
+h2 { font-size: 28px; color: #1a1a2e; margin-bottom: 16px; }
+h3 { font-size: 20px; color: #2d2d2d; margin: 28px 0 12px; }
+h4 { font-size: 16px; color: #333; margin: 20px 0 8px; }
+p { line-height: 1.7; margin-bottom: 14px; font-size: 15px; color: #444; }
+ul, ol { margin: 12px 0 20px 24px; }
+li { line-height: 1.7; margin-bottom: 6px; font-size: 15px; color: #444; }
+pre { background: #1a1a2e; color: #e8e8e8; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 16px 0; font-size: 13px; line-height: 1.5; }
+code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c7254e; }
+pre code { background: none; padding: 0; color: inherit; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+th { background: #f5f5f5; font-weight: 600; }
+tr:nth-child(even) { background: #fafafa; }
+.badge { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 12px; padding: 2px 10px; border-radius: 10px; font-weight: 500; }
+.tag { display: inline-block; background: #f3e5f5; color: #7b1fa2; font-size: 11px; padding: 2px 8px; border-radius: 8px; margin: 2px; }
+.highlight { background: #fffde7; border: 1px solid #fff9c4; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+.warn { background: #fdecea; border: 1px solid #f5c6c0; border-radius: 8px; padding: 16px 20px; margin: 16px 0; }
+@media (max-width: 800px) { nav { width: 100%; height: auto; position: relative; } main { margin-left: 0; padding: 24px; } }
+</style>
+</head>
+<body>
+
+<nav>
+<h1>SDLC Agentic Harness</h1>
+<a href="index.html">Overview</a>
+<a href="stages.html">SDLC Stages</a>
+<a href="gates.html">Gate Verification</a>
+<a href="verification.html">Verification Methods</a>
+<a href="coding-loop.html">Coding Loop</a>
+<a href="logging.html">LLM Logging</a>
+<a href="state.html">State Persistence</a>
+<a href="principles.html">PRINCIPLES.md</a>
+<a href="gherkin.html">Gherkin Specs</a>
+<a href="var-spec.html" class="active">Vár Spec</a>
+<a href="review-pr.html">Review &amp; PR</a>
+<a href="cli.html">CLI Reference</a>
+<a href="config.html">Configuration</a>
+</nav>
+
+<main>
+
+<h2>Vár Spec — Markdown as an Executable Specification</h2>
+
+<p>
+<code>var-spec</code> is an <strong>opt-in</strong> spec profile, an alternative to <code>gherkin-bdd</code> for the same kind of user-facing, behavioural scenarios. Instead of a separate <code>.feature</code> dialect, the spec is <strong>plain Markdown</strong>: a heading names the example, a sentence states a literal, checkable value, and a step definition binds that sentence to real application code. There are no <code>Given</code>/<code>When</code>/<code>Then</code> keywords to get right — the document itself is the test.
+</p>
+
+<div class="highlight">
+<p><strong>Not the default.</strong> <code>gherkin-bdd</code> remains the harness default. <code>var-spec</code> only activates when explicitly selected — via <code>--profiles var-spec</code>, <code>sdlc.config.json</code>'s <code>default_profiles</code>, or by asking for it by name during the requirements Q&amp;A. Don't select both <code>gherkin-bdd</code> and <code>var-spec</code> together — they cover the same scenarios.</p>
+</div>
+
+<h3>Why it's different from Gherkin</h3>
+
+<table>
+<tr><th>Gherkin (<code>gherkin-bdd</code>)</th><th>Vár (<code>var-spec</code>)</th></tr>
+<tr><td>Separate <code>.feature</code> dialect</td><td>Plain <code>.md</code> — renders on GitHub/docs sites as-is</td></tr>
+<tr><td><code>Given</code>/<code>When</code>/<code>Then</code> are load-bearing keywords</td><td>Keywords optional, purely narrative — a step is a <strong>stimulus</strong> or <strong>sensor</strong> by what it does, never by how the sentence starts</td></tr>
+<tr><td>Assertion hand-written inside the step definition body</td><td>Assertion is structural: the sensor's return value is compared against the literal value in the document</td></tr>
+<tr><td>Failure points at the step definition</td><td>Failure points at the exact span in the Markdown where the claim broke</td></tr>
+</table>
+
+<h3>Triggering it</h3>
+
+<p>Select the profile at the requirements stage, either explicitly on the command line:</p>
+
+<pre>python3 .scripts/sdlc_harness.py --stage requirements --profiles var-spec --context "$CONTEXT_FILE"</pre>
+
+<p>or by setting it as a project default in <code>sdlc.config.json</code>:</p>
+
+<pre>{
+  "default_model": "...",
+  "default_profiles": ["var-spec", "unit-tests"]
+}</pre>
+
+<p>or by asking for it during the requirements Q&amp;A conversation (e.g. "use Vár / Markdown specs for this feature") — the LLM will recommend <code>gherkin-bdd</code> by default but honours an explicit ask for <code>var-spec</code>, and the confirmed choice is recorded in the requirements context footer:</p>
+
+<pre>SPEC_PROFILES: var-spec, unit-tests
+SPEC_TOOLCHAIN: var-spec=pytest-var; unit-tests=pytest</pre>
+
+<h3>What gets generated</h3>
+
+<p>The requirements stage writes one Markdown file per feature area to <code>sdlc/requirements/var-examples/</code>, plus a <code>var.config.json</code> at the project root that tells the Vár adapter which files are specs and which files bind their steps:</p>
+
+<pre># User Login
+A user with the correct password logs in successfully.
+Given the user "alice" registered with password "secret123".
+When alice logs in with password "secret123".
+Then the login succeeds and returns a session token.</pre>
+
+<p>Notice the <code>Given</code>/<code>When</code>/<code>Then</code> words above are optional narration — Vár never matches on them. What must be checkable is the literal claim: <em>"the login succeeds and returns a session token"</em> is bound to a real step, not asserted by keyword.</p>
+
+<div class="warn">
+<p><strong>Markup inside a matched sentence is significant.</strong> Vár matches the raw characters of a claim sentence — emphasis, links, and inline code are not stripped. Keep claim sentences plain; put styling only in the narration around them.</p>
+</div>
+
+<h3>Step Definitions: Stimulus and Sensor</h3>
+
+<p>The coding stage generates step definitions as first-class targets alongside the application code. Every step is classified by what it <em>does</em>:</p>
+
+<ul>
+<li><strong>stimulus</strong> — arranges the starting state and/or acts on it (functional: receives state, returns the evolved state)</li>
+<li><strong>sensor</strong> — read-only; returns the value Vár compares against the literal in the document</li>
+</ul>
+
+<p>Steps must stay <strong>thin</strong> (a couple of lines) and delegate to the real domain code — no mocks of the system under test. The logic lives in the application; the step definition is glue, and the assertion lives in the Markdown itself.</p>
+
+<h3>Toolchain by Language</h3>
+
+<p>The runner and step-definition location are chosen per project language (auto-detected, overridable via <code>sdlc.config.json</code>):</p>
+
+<table>
+<tr><th>Language</th><th>Adapter</th><th>Step definitions</th><th>Verifier command</th></tr>
+<tr><td>Python</td><td>pytest-var</td><td><code>sdlc/requirements/var-examples/steps/*.steps.py</code></td><td><code>python3 -m pytest</code></td></tr>
+<tr><td>JS/TS</td><td>@oselvar/var-cli</td><td><code>sdlc/requirements/var-examples/steps/*.steps.{js,ts}</code></td><td><code>npx var run</code></td></tr>
+<tr><td>Java</td><td>var-junit</td><td><code>src/test/java/sdlc/varsteps/*Steps.java</code> + <code>RunVarSpecsTest.java</code></td><td><code>mvn -q test</code> / <code>gradle test</code></td></tr>
+</table>
+
+<div class="warn">
+<p><strong>JVM tooling is less mature.</strong> There is no <code>var init</code> CLI for Java/Kotlin yet, so <code>var.config.json</code> lists step classes by fully-qualified name (generated by the profile from each spec file's name) rather than a glob, and the JUnit suite class must exist alongside the step classes. Prefer <code>gherkin-bdd</code> on Java/Kotlin projects unless you specifically want <code>var-spec</code>.</p>
+</div>
+
+<h3>Verification is Deterministic</h3>
+
+<div class="highlight">
+<p>Like every spec profile in this harness, <code>var-spec</code> verification is a real command's exit code — never LLM judgment. The coding stage runs the verifier inside its iteration loop, feeding failures back into the next iteration; the testing stage runs it again for the gate. If the language adapter isn't installed, the coding stage fails fast at preflight with the exact install command (e.g. <code>pip install pytest-var</code>, <code>npm install --save-dev @oselvar/var @oselvar/var-cli</code>) — there is no silent fallback.</p>
+</div>
+
+<p>The per-profile result is appended to <code>TEST_REPORT.md</code>, same as every other profile:</p>
+
+<pre>## Spec Verification: Vár Spec
+**Status:** ✓ PASSED
+**Command:** `python3 -m pytest`
+**Exit Code:** 0</pre>
+
+<h3>See Also</h3>
+<ul>
+<li><a href="gherkin.html">Gherkin Specs</a> — the default profile for the same class of scenarios</li>
+<li><a href="verification.html">Dual Verification Methods</a> — code-based vs AI inference verification</li>
+<li><a href="coding-loop.html">Coding Loop</a> — how code and step definitions are generated from specs</li>
+</ul>
+
+</main>
+
+</body>
+</html>

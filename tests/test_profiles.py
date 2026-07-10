@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 from pathlib import Path
@@ -13,6 +14,7 @@ from profiles import (
     validate_profile_names, CLASSIFICATION_DEFAULTS,
 )
 from profiles.gherkin_bdd import GherkinBddProfile
+from profiles.var_spec import VarSpecProfile, VAR_CONFIG_PATH
 from profiles.unit_tests import UnitTestsProfile, TEST_CASES_PATH
 from profiles.openapi_contract import OpenApiContractProfile
 
@@ -31,7 +33,9 @@ def in_tmp_dir(tmp_path, monkeypatch):
 
 class TestRegistryResolution:
     def test_all_profiles_registered(self):
-        assert set(PROFILE_REGISTRY) == {"gherkin-bdd", "unit-tests", "openapi-contract", "stitch-ui"}
+        assert set(PROFILE_REGISTRY) == {
+            "gherkin-bdd", "var-spec", "unit-tests", "openapi-contract", "stitch-ui",
+        }
 
     def test_override_wins_over_state_and_config(self):
         state = SDLCPersistedState(spec_profiles=["unit-tests"])
@@ -181,6 +185,102 @@ class TestGherkinBddProfile:
     def test_java_verifier_command(self, in_tmp_dir):
         (in_tmp_dir / "pom.xml").write_text("<project/>")
         profile = GherkinBddProfile(make_config())
+        assert profile.resolve_command() == "mvn -q test"
+
+
+class TestVarSpecProfile:
+    def test_parse_and_write_spec_files(self, in_tmp_dir):
+        profile = VarSpecProfile(make_config())
+        llm_content = (
+            "```requirements-md\n# Reqs\n```\n"
+            "---VAR_SPEC_FILE: login.md---\n"
+            "```markdown\n# Login\nA user logs in with a valid password.\n```\n"
+            "---VAR_SPEC_FILE: logout.md---\n"
+            "```markdown\n# Logout\nA user logs out and the session ends.\n```\n"
+        )
+        written = profile.parse_and_write(llm_content)
+        assert len(written) == 2
+        assert os.path.exists("sdlc/requirements/var-examples/login.md")
+        content = open("sdlc/requirements/var-examples/login.md").read()
+        assert content.startswith("# Login")
+        assert "```" not in content
+
+    def test_parse_and_write_creates_var_config(self, in_tmp_dir):
+        (in_tmp_dir / "pyproject.toml").write_text("")
+        profile = VarSpecProfile(make_config())
+        profile.parse_and_write(
+            "---VAR_SPEC_FILE: login.md---\n```markdown\n# Login\nok.\n```\n"
+        )
+        assert os.path.exists(VAR_CONFIG_PATH)
+        config = json.loads(open(VAR_CONFIG_PATH).read())
+        assert "var-examples" in config["docs"]["include"][0]
+        assert config["steps"][0].endswith(".steps.py")
+
+    def test_requirements_gate_fails_without_specs(self, in_tmp_dir):
+        profile = VarSpecProfile(make_config())
+        check = profile.requirements_gate_checks()[0]
+        passed, _ = check.run()
+        assert not passed
+
+    def test_parse_last_spec_stops_at_its_own_fence(self, in_tmp_dir):
+        llm_content = (
+            "---VAR_SPEC_FILE: login.md---\n"
+            "```markdown\n# Login\nok.\n```\n"
+            "\n---\n\n"
+            "```test-cases-md\n# Test Cases\n| ID | Description | Test File | Priority |\n"
+            "|----|----|----|----|\n| TC-1 | x | tests/t.py | High |\n```\n"
+        )
+        profile = VarSpecProfile(make_config())
+        written = profile.parse_and_write(llm_content)
+        assert written == ["sdlc/requirements/var-examples/login.md"]
+        content = open("sdlc/requirements/var-examples/login.md").read()
+        assert content.strip() == "# Login\nok."
+        assert "test-cases-md" not in content
+
+    def test_custom_command_skips_runner_preflight(self):
+        config = make_config(profiles={"var-spec": {"command": "echo ok"}})
+        profile = VarSpecProfile(config)
+        ok, _ = profile.preflight()
+        assert ok
+        assert profile.resolve_command() == "echo ok"
+
+    def test_verifier_gate_passes_on_exit_zero(self, in_tmp_dir):
+        config = make_config(profiles={"var-spec": {"command": "exit 0"}})
+        profile = VarSpecProfile(config)
+        check = profile.verification_gate_checks()[0]
+        assert check.name == "profile_var_spec_verified"
+        passed, _ = check.run()
+        assert passed
+
+    def test_scaffold_targets_python(self, in_tmp_dir):
+        (in_tmp_dir / "pyproject.toml").write_text("")
+        os.makedirs("sdlc/requirements/var-examples", exist_ok=True)
+        Path("sdlc/requirements/var-examples/user-login.md").write_text("# x")
+        profile = VarSpecProfile(make_config())
+        targets = profile.coding_scaffold_targets([])
+        assert targets == ["sdlc/requirements/var-examples/steps/user_login.steps.py"]
+
+    def test_scaffold_targets_java_includes_runner(self, in_tmp_dir):
+        (in_tmp_dir / "pom.xml").write_text("<project/>")
+        os.makedirs("sdlc/requirements/var-examples", exist_ok=True)
+        Path("sdlc/requirements/var-examples/user-login.md").write_text("# x")
+        profile = VarSpecProfile(make_config())
+        targets = profile.coding_scaffold_targets([])
+        assert "src/test/java/sdlc/varsteps/UserLoginSteps.java" in targets
+        assert "src/test/java/sdlc/RunVarSpecsTest.java" in targets
+
+    def test_scaffold_targets_ts(self, in_tmp_dir):
+        (in_tmp_dir / "package.json").write_text("{}")
+        (in_tmp_dir / "tsconfig.json").write_text("{}")
+        os.makedirs("sdlc/requirements/var-examples", exist_ok=True)
+        Path("sdlc/requirements/var-examples/user-login.md").write_text("# x")
+        profile = VarSpecProfile(make_config())
+        targets = profile.coding_scaffold_targets([])
+        assert targets == ["sdlc/requirements/var-examples/steps/user-login.steps.ts"]
+
+    def test_java_verifier_command(self, in_tmp_dir):
+        (in_tmp_dir / "pom.xml").write_text("<project/>")
+        profile = VarSpecProfile(make_config())
         assert profile.resolve_command() == "mvn -q test"
 
 

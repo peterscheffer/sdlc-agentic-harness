@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "/Users/peterscheffer/Code/new_project", "run", "dev"],
       "port": 3002
+    },
+    {
+      "name": "harness-docs",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8721", "--directory", "docs"],
+      "port": 8721
     }
   ]
 }

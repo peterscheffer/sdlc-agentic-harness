@@ -37,9 +37,9 @@ class TimeoutsConfig(BaseModel):
 
 
 class ProfileConfig(BaseModel):
-    runner: Optional[str] = None          # e.g. behave | cucumber-js | cucumber-jvm | pytest | jest | vitest | junit | schemathesis
+    runner: Optional[str] = None          # e.g. behave | cucumber-js | cucumber-jvm | pytest-var | var-cli | var-junit | pytest | jest | vitest | junit | schemathesis
     command: Optional[str] = None         # full override of the verifier command
-    steps_dir: Optional[str] = None       # gherkin-bdd: where step definitions live
+    steps_dir: Optional[str] = None       # gherkin-bdd / var-spec: where step definitions live
     tests_dir: Optional[str] = None       # unit-tests: where spec-derived tests live
     spec_path: Optional[str] = None       # openapi-contract: path to the OpenAPI document
     server_command: Optional[str] = None  # openapi-contract: how to start the service
